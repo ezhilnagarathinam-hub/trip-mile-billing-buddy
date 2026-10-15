@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "./Logo";
 import { Button } from "./ui/button";
 
-export function AppHeader({ title, name }: { title: string; name?: string }) {
+export function AppHeader({ title, name }: { title: string; name?: string | undefined }) {
   const navigate = useNavigate();
   return (
     <header className="bg-ink text-ink-foreground">

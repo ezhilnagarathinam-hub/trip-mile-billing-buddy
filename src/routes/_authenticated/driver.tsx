@@ -87,12 +87,12 @@ function NewTrip({ driverId, driverName, onDone }: { driverId: string; driverNam
 
   async function start(e: React.FormEvent) {
     e.preventDefault();
-    if (!/^\d{10}$/.test(f.phone.replace(/\D/g, "").slice(-10))) return toast.error("Enter a valid 10-digit phone");
+    if (!/^\d{10}$/.test(f.phone.replace(/\D/g, "").slice(-10))) { toast.error("Enter a valid 10-digit phone"); return; }
     setBusy(true);
     let p = from;
     if (!p) {
       try { const g = await getPosition(); p = { ...g, label: await reverseGeocode(g) }; }
-      catch { setBusy(false); return toast.error("Allow GPS or type the pickup location"); }
+      catch { setBusy(false); { toast.error("Allow GPS or type the pickup location"); return; } }
     }
     const { data: s } = await supabase.from("settings").select("*").eq("id", 1).single();
     const { error } = await supabase.from("trips").insert({
@@ -104,7 +104,7 @@ function NewTrip({ driverId, driverName, onDone }: { driverId: string; driverNam
       payment_link: s?.default_payment_link ?? "",
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Trip started. Drive safe!");
     onDone();
   }
@@ -140,7 +140,7 @@ function OngoingTrip({ trip, onDone }: { trip: { id: string; trip_code: string; 
     let p = to;
     if (!p) {
       try { const g = await getPosition(); p = { ...g, label: await reverseGeocode(g) }; }
-      catch { setBusy(false); return toast.error("Allow GPS or type the drop location"); }
+      catch { setBusy(false); { toast.error("Allow GPS or type the drop location"); return; } }
     }
     const route = trip.start_lat != null && trip.start_lng != null ? await roadRoute({ lat: trip.start_lat, lng: trip.start_lng }, p) : { km: 0 };
     const endTime = new Date();
@@ -150,7 +150,7 @@ function OngoingTrip({ trip, onDone }: { trip: { id: string; trip_code: string; 
       distance_km: route.km, duration_min: dur, status: "completed",
     }).eq("id", trip.id);
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(`Trip ended · ${route.km} km · ${fmtDur(dur)}`);
     onDone();
   }

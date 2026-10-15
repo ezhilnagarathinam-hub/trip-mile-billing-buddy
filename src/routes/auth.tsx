@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShieldCheck, Car } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (s: Record<string, unknown>) => ({ demo: s.demo === true || s.demo === "true" ? true : undefined }),
   head: () => ({
     meta: [
       { title: "Login — Raman Travels" },
@@ -39,7 +38,7 @@ function AuthPage() {
     setBusy("login");
     const { error } = await supabase.auth.signInWithPassword({ email: f.email, password: f.password });
     setBusy(null);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     go();
   }
   async function signup(e: React.FormEvent) {
@@ -51,7 +50,7 @@ function AuthPage() {
       options: { emailRedirectTo: window.location.origin + "/dashboard", data: { full_name: f.name, phone: f.phone } },
     });
     setBusy(null);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     if (data.session) go();
     else toast.success("Check your email to confirm. After that, the admin must approve your account.");
   }

@@ -5,7 +5,7 @@ import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import { ArrowLeft, Download, Mail, MessageCircle, MessageSquare, Plus, Share2, Trash2, CheckCircle2, Heart, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
+import type { Tables, TablesUpdate } from "@/integrations/supabase/types";
 import { useMe } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
 import { RouteMap } from "@/components/RouteMap";
@@ -70,11 +70,11 @@ function InvoicePage() {
   const invoiced = !!trip.invoiced_at;
   const locked = trip.status === "paid" || trip.status === "closed";
 
-  async function save(patch: Record<string, unknown>, msg: string) {
+  async function save(patch: TablesUpdate<"trips">, msg: string) {
     setBusy(true);
     const { error } = await supabase.from("trips").update(patch).eq("id", tripId);
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(msg);
     qc.invalidateQueries({ queryKey: ["trip", tripId] });
   }

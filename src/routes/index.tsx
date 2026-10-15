@@ -42,7 +42,7 @@ function Index() {
         <div className="mt-8 flex flex-wrap gap-3">
           <Button size="lg" asChild><Link to="/auth">Get started</Link></Button>
           <Button size="lg" variant="outline" className="border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground" asChild>
-            <Link to="/auth" search={{ demo: true }}>Try demo</Link>
+            <Link to="/auth">Try demo</Link>
           </Button>
         </div>
         <div className="mt-16 grid gap-4 sm:grid-cols-4">

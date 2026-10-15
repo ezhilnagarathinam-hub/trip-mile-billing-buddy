@@ -103,7 +103,7 @@ function Drivers() {
   });
   async function setStatus(id: string, status: string) {
     const { error } = await supabase.from("profiles").update({ status }).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(`Driver ${status}`);
     qc.invalidateQueries({ queryKey: ["drivers"] });
   }
@@ -134,13 +134,13 @@ function Charges() {
 
   async function saveSettings() {
     const { error } = await supabase.from("settings").update({ rate_per_km: Number(f.rate), driver_bata: Number(f.bata), default_payment_link: f.link, up_down: f.upDown, updated_at: new Date().toISOString() }).eq("id", 1);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Charges saved — applied to new trips"); qc.invalidateQueries({ queryKey: ["settings"] });
   }
   async function addItem() {
     if (!n.name) return;
     const { error } = await supabase.from("charge_items").insert({ name: n.name, amount: Number(n.amount) || 0 });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setN({ name: "", amount: "" }); qc.invalidateQueries({ queryKey: ["charge-items"] });
   }
   async function updItem(id: string, patch: { active?: boolean; amount?: number }) {
