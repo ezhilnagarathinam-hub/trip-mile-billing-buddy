@@ -5,6 +5,7 @@ import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import { ArrowLeft, Download, Mail, MessageCircle, MessageSquare, Plus, Share2, Trash2, CheckCircle2, Heart, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { useMe } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
 import { RouteMap } from "@/components/RouteMap";
@@ -214,9 +215,7 @@ function InvoicePage() {
   );
 }
 
-type TripRow = NonNullable<Awaited<ReturnType<typeof getTripType>>>;
-// type helper only
-async function getTripType() { return (await supabase.from("trips").select("*").single()).data; }
+type TripRow = Tables<"trips">;
 
 function InvoiceCard({ trip, refEl }: { trip: TripRow; refEl: React.RefObject<HTMLDivElement | null> }) {
   const rows: [string, string][] = [

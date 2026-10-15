@@ -14,6 +14,8 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated/driver'
+import { Route as AuthenticatedInvoiceIndexRouteImport } from './routes/_authenticated/invoice.index'
+import { Route as AuthenticatedInvoiceTripIdRouteImport } from './routes/_authenticated/invoice.$tripId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,18 +41,34 @@ const AuthenticatedDriverRoute = AuthenticatedDriverRouteImport.update({
   path: '/driver',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedInvoiceIndexRoute =
+  AuthenticatedInvoiceIndexRouteImport.update({
+    id: '/invoice/',
+    path: '/invoice/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInvoiceTripIdRoute =
+  AuthenticatedInvoiceTripIdRouteImport.update({
+    id: '/invoice/$tripId',
+    path: '/invoice/$tripId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/driver': typeof AuthenticatedDriverRoute
+  '/invoice/$tripId': typeof AuthenticatedInvoiceTripIdRoute
+  '/invoice/': typeof AuthenticatedInvoiceIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/driver': typeof AuthenticatedDriverRoute
+  '/invoice/$tripId': typeof AuthenticatedInvoiceTripIdRoute
+  '/invoice': typeof AuthenticatedInvoiceIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,12 +77,15 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/driver': typeof AuthenticatedDriverRoute
+  '/_authenticated/invoice/$tripId': typeof AuthenticatedInvoiceTripIdRoute
+  '/_authenticated/invoice/': typeof AuthenticatedInvoiceIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/driver'
+  fullPaths:
+    '/' | '/auth' | '/dashboard' | '/driver' | '/invoice/$tripId' | '/invoice/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/driver'
+  to: '/' | '/auth' | '/dashboard' | '/driver' | '/invoice/$tripId' | '/invoice'
   id:
     | '__root__'
     | '/'
@@ -72,6 +93,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/dashboard'
     | '/_authenticated/driver'
+    | '/_authenticated/invoice/$tripId'
+    | '/_authenticated/invoice/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -117,17 +140,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDriverRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/invoice/': {
+      id: '/_authenticated/invoice/'
+      path: '/invoice'
+      fullPath: '/invoice/'
+      preLoaderRoute: typeof AuthenticatedInvoiceIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/invoice/$tripId': {
+      id: '/_authenticated/invoice/$tripId'
+      path: '/invoice/$tripId'
+      fullPath: '/invoice/$tripId'
+      preLoaderRoute: typeof AuthenticatedInvoiceTripIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDriverRoute: typeof AuthenticatedDriverRoute
+  AuthenticatedInvoiceTripIdRoute: typeof AuthenticatedInvoiceTripIdRoute
+  AuthenticatedInvoiceIndexRoute: typeof AuthenticatedInvoiceIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDriverRoute: AuthenticatedDriverRoute,
+  AuthenticatedInvoiceTripIdRoute: AuthenticatedInvoiceTripIdRoute,
+  AuthenticatedInvoiceIndexRoute: AuthenticatedInvoiceIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
