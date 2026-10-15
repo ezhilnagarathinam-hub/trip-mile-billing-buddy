@@ -14,16 +14,223 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      charge_items: {
+        Row: {
+          active: boolean
+          amount: number
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          active?: boolean
+          amount?: number
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id: string
+          phone?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          default_payment_link: string
+          driver_bata: number
+          id: number
+          rate_per_km: number
+          up_down: boolean
+          updated_at: string
+        }
+        Insert: {
+          default_payment_link?: string
+          driver_bata?: number
+          id?: number
+          rate_per_km?: number
+          up_down?: boolean
+          updated_at?: string
+        }
+        Update: {
+          default_payment_link?: string
+          driver_bata?: number
+          id?: number
+          rate_per_km?: number
+          up_down?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      trips: {
+        Row: {
+          admin_charges: Json
+          closed_at: string | null
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          distance_km: number
+          driver_bata: number
+          driver_id: string
+          driver_name: string
+          duration_min: number
+          end_address: string
+          end_lat: number | null
+          end_lng: number | null
+          end_time: string | null
+          extra_charges: Json
+          guests: number
+          id: string
+          invoiced_at: string | null
+          km_charge: number
+          paid_at: string | null
+          payment_link: string
+          rate_per_km: number
+          start_address: string
+          start_lat: number | null
+          start_lng: number | null
+          start_time: string | null
+          status: string
+          total_amount: number
+          trip_code: string
+          up_down: boolean
+          vehicle_no: string
+        }
+        Insert: {
+          admin_charges?: Json
+          closed_at?: string | null
+          created_at?: string
+          customer_email?: string
+          customer_name: string
+          customer_phone: string
+          distance_km?: number
+          driver_bata?: number
+          driver_id: string
+          driver_name?: string
+          duration_min?: number
+          end_address?: string
+          end_lat?: number | null
+          end_lng?: number | null
+          end_time?: string | null
+          extra_charges?: Json
+          guests?: number
+          id?: string
+          invoiced_at?: string | null
+          km_charge?: number
+          paid_at?: string | null
+          payment_link?: string
+          rate_per_km?: number
+          start_address?: string
+          start_lat?: number | null
+          start_lng?: number | null
+          start_time?: string | null
+          status?: string
+          total_amount?: number
+          trip_code?: string
+          up_down?: boolean
+          vehicle_no?: string
+        }
+        Update: {
+          admin_charges?: Json
+          closed_at?: string | null
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string
+          distance_km?: number
+          driver_bata?: number
+          driver_id?: string
+          driver_name?: string
+          duration_min?: number
+          end_address?: string
+          end_lat?: number | null
+          end_lng?: number | null
+          end_time?: string | null
+          extra_charges?: Json
+          guests?: number
+          id?: string
+          invoiced_at?: string | null
+          km_charge?: number
+          paid_at?: string | null
+          payment_link?: string
+          rate_per_km?: number
+          start_address?: string
+          start_lat?: number | null
+          start_lng?: number | null
+          start_time?: string | null
+          status?: string
+          total_amount?: number
+          trip_code?: string
+          up_down?: boolean
+          vehicle_no?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_approved_driver: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "driver"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +357,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "driver"],
+    },
   },
 } as const
