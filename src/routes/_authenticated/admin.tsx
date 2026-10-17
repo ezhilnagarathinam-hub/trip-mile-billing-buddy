@@ -2,7 +2,7 @@ import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Check, X, Trash2, Plus } from "lucide-react";
+import { Check, X, Trash2, Plus, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
@@ -29,10 +29,11 @@ function AdminPage() {
       <AppHeader title="Admin" name={me.profile?.full_name} />
       <main className="mx-auto max-w-6xl p-4">
         <Tabs defaultValue="reports">
-          <TabsList><TabsTrigger value="reports">Travel report</TabsTrigger><TabsTrigger value="drivers">Drivers</TabsTrigger><TabsTrigger value="charges">Charges</TabsTrigger></TabsList>
+          <TabsList className="grid w-full grid-cols-4"><TabsTrigger value="reports">Travel report</TabsTrigger><TabsTrigger value="drivers">Drivers</TabsTrigger><TabsTrigger value="charges">Charges</TabsTrigger><TabsTrigger value="cabs">Cab types</TabsTrigger></TabsList>
           <TabsContent value="reports"><Reports /></TabsContent>
           <TabsContent value="drivers"><Drivers /></TabsContent>
           <TabsContent value="charges"><Charges /></TabsContent>
+          <TabsContent value="cabs"><CabTypes /></TabsContent>
         </Tabs>
       </main>
     </div>
@@ -177,6 +178,74 @@ function Charges() {
             <Button onClick={addItem}><Plus className="h-4 w-4" /></Button>
           </div>
           <p className="text-xs text-muted-foreground">Active items with an amount are pre-selected on each invoice; drivers can untick or adjust.</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function CabTypes() {
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: ["cab-types"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("cab_types").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+  const [draft, setDraft] = useState({ name: "", seats: "4", ac: true, features: "" });
+
+  async function update(id: string, patch: { name?: string; seats?: number; ac?: boolean; features?: string; active?: boolean }) {
+    const { error } = await supabase.from("cab_types").update(patch).eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    qc.invalidateQueries({ queryKey: ["cab-types"] });
+  }
+
+  async function addCab(e: React.FormEvent) {
+    e.preventDefault();
+    if (!draft.name.trim()) return;
+    const { error } = await supabase.from("cab_types").insert({
+      name: draft.name.trim(), seats: Math.max(1, Number(draft.seats) || 1), ac: draft.ac, features: draft.features.trim(),
+    });
+    if (error) { toast.error(error.message); return; }
+    setDraft({ name: "", seats: "4", ac: true, features: "" });
+    toast.success("Cab type added");
+    qc.invalidateQueries({ queryKey: ["cab-types"] });
+  }
+
+  async function removeCab(id: string) {
+    const { error } = await supabase.from("cab_types").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Cab type removed");
+    qc.invalidateQueries({ queryKey: ["cab-types"] });
+  }
+
+  return (
+    <div className="space-y-4 pt-4">
+      <Card>
+        <CardHeader><CardTitle className="text-3xl font-normal">Cab types</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          {q.data?.map((cab) => (
+            <div key={cab.id} className="grid gap-3 rounded-md border p-3 sm:grid-cols-[1.2fr_0.7fr_0.65fr_1.6fr_auto] sm:items-end">
+              <div><Label>Cab name</Label><Input defaultValue={cab.name} onBlur={(e) => { if (e.target.value.trim() !== cab.name) update(cab.id, { name: e.target.value.trim() }); }} /></div>
+              <div><Label>Seats</Label><Input type="number" min={1} defaultValue={cab.seats} onBlur={(e) => { const seats = Math.max(1, Number(e.target.value) || 1); if (seats !== cab.seats) update(cab.id, { seats }); }} /></div>
+              <div className="flex items-center gap-2"><Switch checked={cab.ac} onCheckedChange={(ac) => update(cab.id, { ac })} /><span className="text-sm">{cab.ac ? "AC" : "Non-AC"}</span></div>
+              <div><Label>Features</Label><Input defaultValue={cab.features} placeholder="e.g. luggage space, child seat" onBlur={(e) => { if (e.target.value !== cab.features) update(cab.id, { features: e.target.value.trim() }); }} /></div>
+              <div className="flex items-center gap-2">
+                <Switch checked={cab.active} onCheckedChange={(active) => update(cab.id, { active })} aria-label={`Make ${cab.name} ${cab.active ? "unavailable" : "available"}`} />
+                <Button type="button" variant="ghost" size="icon" aria-label={`Delete ${cab.name}`} onClick={() => removeCab(cab.id)}><Trash2 className="h-4 w-4" /></Button>
+              </div>
+            </div>
+          ))}
+          {q.data?.length === 0 && <p className="text-sm text-muted-foreground">No cab types added yet.</p>}
+          <form onSubmit={addCab} className="grid gap-3 border-t pt-4 sm:grid-cols-[1.2fr_0.7fr_0.65fr_1.6fr_auto] sm:items-end">
+            <div><Label htmlFor="new-cab-name">Cab name</Label><Input id="new-cab-name" placeholder="e.g. Sedan" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required /></div>
+            <div><Label htmlFor="new-cab-seats">Seats</Label><Input id="new-cab-seats" type="number" min={1} value={draft.seats} onChange={(e) => setDraft({ ...draft, seats: e.target.value })} /></div>
+            <div className="flex items-center gap-2"><Switch checked={draft.ac} onCheckedChange={(ac) => setDraft({ ...draft, ac })} /><span className="text-sm">{draft.ac ? "AC" : "Non-AC"}</span></div>
+            <div><Label htmlFor="new-cab-features">Features</Label><Input id="new-cab-features" placeholder="e.g. luggage space, child seat" value={draft.features} onChange={(e) => setDraft({ ...draft, features: e.target.value })} /></div>
+            <Button type="submit"><Car className="mr-1 h-4 w-4" />Add cab</Button>
+          </form>
         </CardContent>
       </Card>
     </div>

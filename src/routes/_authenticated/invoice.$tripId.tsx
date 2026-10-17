@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BRAND, calcTotal, fmtDT, fmtDur, inr, statusStyle, waPhone, type Charge } from "@/lib/format";
 
@@ -29,12 +30,15 @@ function InvoicePage() {
   const q = useQuery({
     queryKey: ["trip", tripId],
     queryFn: async () => {
-      const [t, items] = await Promise.all([
+      const [t, items, cabs] = await Promise.all([
         supabase.from("trips").select("*").eq("id", tripId).single(),
         supabase.from("charge_items").select("*").eq("active", true).order("created_at"),
+        supabase.from("cab_types").select("*").eq("active", true).order("name"),
       ]);
       if (t.error) throw t.error;
-      return { trip: t.data, items: items.data ?? [] };
+      if (items.error) throw items.error;
+      if (cabs.error) throw cabs.error;
+      return { trip: t.data, items: items.data ?? [], cabs: cabs.data ?? [] };
     },
   });
   const trip = q.data?.trip;
@@ -45,6 +49,7 @@ function InvoicePage() {
   const [admin, setAdmin] = useState<Record<string, number | null>>({});
   const [extras, setExtras] = useState<Charge[]>([]);
   const [link, setLink] = useState("");
+  const [cabType, setCabType] = useState("");
   const [busy, setBusy] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -52,6 +57,7 @@ function InvoicePage() {
     if (!trip || !q.data) return;
     setKm(String(trip.distance_km)); setRate(String(trip.rate_per_km)); setBata(String(trip.driver_bata));
     setUpDown(trip.up_down); setLink(trip.payment_link);
+    setCabType(trip.cab_type ?? "");
     setExtras((trip.extra_charges as Charge[]) ?? []);
     const saved = (trip.admin_charges as Charge[]) ?? [];
     const m: Record<string, number | null> = {};
@@ -69,6 +75,10 @@ function InvoicePage() {
   const calc = calcTotal({ distance_km: Number(km), rate_per_km: Number(rate), up_down: upDown, driver_bata: Number(bata), admin_charges: adminCharges, extra_charges: cleanExtras });
   const invoiced = !!trip.invoiced_at;
   const locked = trip.status === "paid" || trip.status === "closed";
+  const selectedCab = q.data?.cabs.find((cab) => cab.id === cabType);
+  const selectedCabDetails = selectedCab
+    ? `${selectedCab.name} · ${selectedCab.seats} seater · ${selectedCab.ac ? "AC" : "Non-AC"}${selectedCab.features.trim() ? ` · ${selectedCab.features.trim()}` : ""}`
+    : cabType === trip.cab_type ? trip.cab_details ?? "" : "";
 
   async function save(patch: TablesUpdate<"trips">, msg: string) {
     setBusy(true);
@@ -83,7 +93,8 @@ function InvoicePage() {
     save({
       distance_km: Number(km), rate_per_km: Number(rate), driver_bata: Number(bata), up_down: upDown,
       km_charge: calc.kmCharge, admin_charges: adminCharges, extra_charges: cleanExtras,
-      total_amount: calc.total, payment_link: link, status: "invoiced", invoiced_at: new Date().toISOString(),
+      total_amount: calc.total, payment_link: link, cab_type: cabType || null, cab_details: selectedCabDetails || null,
+      status: "invoiced", invoiced_at: new Date().toISOString(),
     }, "Invoice generated");
   }
 
@@ -97,6 +108,7 @@ function InvoicePage() {
     `🕒 End: ${fmtDT(trip.end_time)}`,
     `⏱ Duration: ${fmtDur(trip.duration_min)}  |  📏 Distance: ${trip.distance_km} km${trip.up_down ? " (up & down)" : ""}`,
     `👥 Guests: ${trip.guests}`,
+    trip.cab_details ? `🚘 Cab: ${trip.cab_details}` : "",
     ``,
     `KM charge: ${inr(Number(trip.km_charge))}`,
     Number(trip.driver_bata) ? `Driver bata: ${inr(Number(trip.driver_bata))}` : "",
@@ -173,6 +185,18 @@ function InvoicePage() {
                   <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => setExtras([...extras, { name: "", amount: 0 }])}><Plus className="mr-1 h-4 w-4" />Add charge</Button>
                 </div>
                 <div><Label>Payment link (UPI / Razorpay / any — paste here)</Label><Input placeholder="https://…" value={link} onChange={(e) => setLink(e.target.value)} /></div>
+                <div>
+                  <Label>Cab type</Label>
+                  <Select value={cabType || "none"} onValueChange={(value) => setCabType(value === "none" ? "" : value)}>
+                    <SelectTrigger><SelectValue placeholder="Choose a cab (optional)" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No cab selected</SelectItem>
+                      {q.data?.cabs.map((cab) => <SelectItem key={cab.id} value={cab.id}>{cab.name} · {cab.seats} seater · {cab.ac ? "AC" : "Non-AC"}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  {selectedCab && <p className="mt-1 text-xs text-muted-foreground">{selectedCab.features || "No additional features"}</p>}
+                  {q.data?.cabs.length === 0 && <p className="mt-1 text-xs text-muted-foreground">No active cab types are available. Ask the admin to add one.</p>}
+                </div>
               </fieldset>
               <div className="flex items-center justify-between rounded-md bg-ink p-4 text-ink-foreground">
                 <span className="font-display text-2xl">Total</span>
@@ -243,6 +267,7 @@ function InvoiceCard({ trip, refEl }: { trip: TripRow; refEl: React.RefObject<HT
           <div><div className="text-xs uppercase text-muted-foreground">Billed to</div><div className="font-semibold">{trip.customer_name}</div><div>{trip.customer_phone}</div></div>
           <div className="text-right"><div className="text-xs uppercase text-muted-foreground">Driver</div><div className="font-semibold">{trip.driver_name || "—"}</div><div>{trip.vehicle_no}</div></div>
         </div>
+        {trip.cab_details && <div className="rounded-md border border-primary/30 bg-primary/5 p-3"><div className="text-xs uppercase text-muted-foreground">Selected cab</div><div className="font-semibold">{trip.cab_details}</div></div>}
         <div className="space-y-1 rounded-md bg-muted p-3">
           <div><b>From:</b> {trip.start_address}</div>
           <div><b>To:</b> {trip.end_address || "—"}</div>
