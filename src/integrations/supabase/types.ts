@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      cab_types: {
+        Row: {
+          ac: boolean
+          active: boolean
+          created_at: string
+          features: string
+          id: string
+          name: string
+          seats: number
+        }
+        Insert: {
+          ac?: boolean
+          active?: boolean
+          created_at?: string
+          features?: string
+          id?: string
+          name: string
+          seats?: number
+        }
+        Update: {
+          ac?: boolean
+          active?: boolean
+          created_at?: string
+          features?: string
+          id?: string
+          name?: string
+          seats?: number
+        }
+        Relationships: []
+      }
       charge_items: {
         Row: {
           active: boolean
@@ -95,6 +125,8 @@ export type Database = {
       trips: {
         Row: {
           admin_charges: Json
+          cab_details: string | null
+          cab_type: string | null
           closed_at: string | null
           created_at: string
           customer_email: string
@@ -129,6 +161,8 @@ export type Database = {
         }
         Insert: {
           admin_charges?: Json
+          cab_details?: string | null
+          cab_type?: string | null
           closed_at?: string | null
           created_at?: string
           customer_email?: string
@@ -163,6 +197,8 @@ export type Database = {
         }
         Update: {
           admin_charges?: Json
+          cab_details?: string | null
+          cab_type?: string | null
           closed_at?: string | null
           created_at?: string
           customer_email?: string

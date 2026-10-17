@@ -8,6 +8,13 @@
       "when": 1792085195027,
       "tag": "0000_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792220536869,
+      "tag": "0001_add_cab_type_catalog",
+      "breakpoints": true
     }
   ]
 }
