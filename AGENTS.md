@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep the admin-managed cab catalog separate from trip records, and snapshot the chosen cab details on each trip so invoices remain historically accurate when catalog entries change.
