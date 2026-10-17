@@ -1,0 +1,4 @@
+- [ ] Add the cab catalog and trip snapshot fields with authenticated access rules.
+- [ ] Add admin controls for cab types and details.
+- [ ] Add cab selection to invoice creation and display it in shared bills/messages.
+- [ ] Verify the preview and database migration status.
