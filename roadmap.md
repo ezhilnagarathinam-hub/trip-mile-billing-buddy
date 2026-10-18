@@ -1,4 +1,5 @@
-- [ ] Add the cab catalog and trip snapshot fields with authenticated access rules.
-- [ ] Add admin controls for cab types and details.
-- [ ] Add cab selection to invoice creation and display it in shared bills/messages.
-- [ ] Verify the preview and database migration status.
+- [x] Add the cab catalog and trip snapshot fields with authenticated access rules.
+- [x] Add admin controls for cab types and details.
+- [x] Add cab selection to invoice creation and display it in shared bills/messages.
+- [x] Confirm the database migration applied, existing app test passes, and latest preview build succeeds.
+- [ ] Verify add/remove in the signed-in admin preview — blocked until the user identifies which existing admin account to test.
