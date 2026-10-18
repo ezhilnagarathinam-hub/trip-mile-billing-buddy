@@ -15,6 +15,13 @@
       "when": 1792220536869,
       "tag": "0001_add_cab_type_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792333470714,
+      "tag": "0002_add_cab_model_price_and_invoice_void",
+      "breakpoints": true
     }
   ]
 }
