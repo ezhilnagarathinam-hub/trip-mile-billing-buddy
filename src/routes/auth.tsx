@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShieldCheck, Car } from "lucide-react";
+import { BackButton } from "@/components/BackButton";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -74,6 +75,7 @@ function AuthPage() {
       <div className="stripes h-2" />
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="w-full max-w-md rounded-xl bg-card p-6 shadow-2xl">
+          <div className="mb-3"><BackButton to="/" label="Back to home" /></div>
           <Logo className="mb-6 justify-center" />
           <div className="mb-6 grid grid-cols-2 gap-2">
             <Button variant="secondary" disabled={!!busy} onClick={() => demo("admin")}>

@@ -2,7 +2,14 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useMe } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Raman Travels" }, { name: "description", content: "Your Raman Travels dashboard." }] }),
+  head: () => ({ meta: [
+    { title: "Travel Workspace — Raman Travels" },
+    { name: "description", content: "Your Raman Travels workspace for trips and invoices." },
+    { property: "og:title", content: "Travel Workspace — Raman Travels" },
+    { property: "og:description", content: "Your Raman Travels workspace for trips and invoices." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: Dash,
 });
 

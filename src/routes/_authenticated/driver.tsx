@@ -15,7 +15,14 @@ import { getPosition, reverseGeocode, roadRoute } from "@/lib/geo";
 import { fmtDT, fmtDur, inr, statusStyle } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/driver")({
-  head: () => ({ meta: [{ title: "Driver Portal — Raman Travels" }, { name: "description", content: "Start and end trips, create invoices." }] }),
+  head: () => ({ meta: [
+    { title: "Driver Trips — Raman Travels" },
+    { name: "description", content: "Record customer trips, track their routes and prepare invoices." },
+    { property: "og:title", content: "Driver Trips — Raman Travels" },
+    { property: "og:description", content: "Record customer trips, track their routes and prepare invoices." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: DriverPage,
 });
 
@@ -38,7 +45,7 @@ function DriverPage() {
 
   return (
     <div className="min-h-screen">
-      <AppHeader title="Driver" name={me.profile?.full_name || me.user.email} />
+      <AppHeader title="Driver" name={me.profile?.full_name || me.user.email} backTo="/dashboard" />
       <main className="mx-auto max-w-4xl space-y-6 p-4">
         {status !== "approved" ? (
           <Card><CardContent className="py-10 text-center">

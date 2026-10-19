@@ -10,7 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtDT, inr, statusStyle } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/invoice/")({
-  head: () => ({ meta: [{ title: "Create Invoice — Raman Travels" }, { name: "description", content: "Pick a trip to invoice." }] }),
+  head: () => ({ meta: [
+    { title: "Choose a Trip for Invoicing — Raman Travels" },
+    { name: "description", content: "Find a completed trip and prepare its Raman Travels invoice." },
+    { property: "og:title", content: "Choose a Trip for Invoicing — Raman Travels" },
+    { property: "og:description", content: "Find a completed trip and prepare its Raman Travels invoice." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: Pick,
 });
 
@@ -25,7 +32,7 @@ function Pick() {
   const list = (trips.data ?? []).filter((t) => !s || t.trip_code.toLowerCase().includes(s) || t.customer_name.toLowerCase().includes(s) || t.customer_phone.includes(s));
   return (
     <div className="min-h-screen">
-      <AppHeader title={me?.isAdmin ? "Admin" : "Driver"} name={me?.profile?.full_name} />
+      <AppHeader title={me?.isAdmin ? "Admin" : "Driver"} name={me?.profile?.full_name} backTo="/dashboard" />
       <main className="mx-auto max-w-3xl p-4">
         <Card>
           <CardHeader><CardTitle className="text-3xl font-normal">Select trip to invoice</CardTitle></CardHeader>
