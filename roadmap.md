@@ -2,7 +2,7 @@
 - [x] Add admin controls for cab types and details.
 - [x] Add cab selection to invoice creation and display it in shared bills/messages.
 - [x] Confirm the database migration applied, existing app test passes, and latest preview build succeeds.
-- [ ] Add admin-editable cab models and fixed prices, snapshot selected price, and include it in invoices and totals.
-- [ ] Add back navigation to app pages.
+- [x] Add admin-editable cab models and fixed prices, snapshot selected price, and include it in invoices and totals.
+- [x] Add back navigation to app pages.
 - [ ] Allow customer contact edits before invoicing and allow reasoned invoice voids that admins can review.
 - [ ] Verify migration, build, tests, and app flows.

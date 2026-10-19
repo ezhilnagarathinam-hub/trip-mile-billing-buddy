@@ -2,7 +2,7 @@ import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Check, X, Trash2, Plus, Car } from "lucide-react";
+import { Check, X, Trash2, Plus, Car, Pencil, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
@@ -81,7 +81,10 @@ function Reports() {
                 <TableCell>{t.distance_km}{t.up_down ? " ×2" : ""}</TableCell>
                 <TableCell className="max-w-56 truncate text-xs" title={`${t.start_address} → ${t.end_address}`}>{t.start_address.split(",")[0]} → {t.end_address.split(",")[0] || "…"}</TableCell>
                 <TableCell className="font-semibold">{inr(Number(t.total_amount))}</TableCell>
-                <TableCell><span className={`rounded px-2 py-0.5 text-xs font-semibold uppercase ${statusStyle[t.status]}`}>{t.status}</span></TableCell>
+                <TableCell>
+                  <span className={`rounded px-2 py-0.5 text-xs font-semibold uppercase ${statusStyle[t.status] ?? "bg-muted text-foreground"}`}>{t.status}</span>
+                  {t.status === "cancelled" && t.cancel_reason && <div className="mt-1 max-w-48 text-xs text-destructive">Reason: {t.cancel_reason}</div>}
+                </TableCell>
               </TableRow>
             ))}
             {list.length === 0 && <TableRow><TableCell colSpan={10} className="py-8 text-center text-muted-foreground">No trips yet.</TableCell></TableRow>}
@@ -194,9 +197,11 @@ function CabTypes() {
       return data;
     },
   });
-  const [draft, setDraft] = useState({ name: "", seats: "4", ac: true, features: "" });
+  const [draft, setDraft] = useState({ name: "", model: "", seats: "4", ac: true, features: "", cost: "0" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState({ name: "", model: "", seats: "4", ac: true, features: "", cost: "0" });
 
-  async function update(id: string, patch: { name?: string; seats?: number; ac?: boolean; features?: string; active?: boolean }) {
+  async function update(id: string, patch: { name?: string; model?: string; seats?: number; ac?: boolean; features?: string; cost?: number; active?: boolean }) {
     const { error } = await supabase.from("cab_types").update(patch).eq("id", id);
     if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ["cab-types"] });
@@ -206,10 +211,10 @@ function CabTypes() {
     e.preventDefault();
     if (!draft.name.trim()) return;
     const { error } = await supabase.from("cab_types").insert({
-      name: draft.name.trim(), seats: Math.max(1, Number(draft.seats) || 1), ac: draft.ac, features: draft.features.trim(),
+      name: draft.name.trim(), model: draft.model.trim(), seats: Math.max(1, Number(draft.seats) || 1), ac: draft.ac, features: draft.features.trim(), cost: Math.max(0, Number(draft.cost) || 0),
     });
     if (error) { toast.error(error.message); return; }
-    setDraft({ name: "", seats: "4", ac: true, features: "" });
+    setDraft({ name: "", model: "", seats: "4", ac: true, features: "", cost: "0" });
     toast.success("Cab type added");
     qc.invalidateQueries({ queryKey: ["cab-types"] });
   }
@@ -227,24 +232,52 @@ function CabTypes() {
         <CardHeader><CardTitle className="text-3xl font-normal">Cab types</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           {q.data?.map((cab) => (
-            <div key={cab.id} className="grid gap-3 rounded-md border p-3 sm:grid-cols-[1.2fr_0.7fr_0.65fr_1.6fr_auto] sm:items-end">
-              <div><Label>Cab name</Label><Input defaultValue={cab.name} onBlur={(e) => { if (e.target.value.trim() !== cab.name) update(cab.id, { name: e.target.value.trim() }); }} /></div>
-              <div><Label>Seats</Label><Input type="number" min={1} defaultValue={cab.seats} onBlur={(e) => { const seats = Math.max(1, Number(e.target.value) || 1); if (seats !== cab.seats) update(cab.id, { seats }); }} /></div>
-              <div className="flex items-center gap-2"><Switch checked={cab.ac} onCheckedChange={(ac) => update(cab.id, { ac })} /><span className="text-sm">{cab.ac ? "AC" : "Non-AC"}</span></div>
-              <div><Label>Features</Label><Input defaultValue={cab.features} placeholder="e.g. luggage space, child seat" onBlur={(e) => { if (e.target.value !== cab.features) update(cab.id, { features: e.target.value.trim() }); }} /></div>
-              <div className="flex items-center gap-2">
-                <Switch checked={cab.active} onCheckedChange={(active) => update(cab.id, { active })} aria-label={`Make ${cab.name} ${cab.active ? "unavailable" : "available"}`} />
-                <Button type="button" variant="ghost" size="icon" aria-label={`Delete ${cab.name}`} onClick={() => removeCab(cab.id)}><Trash2 className="h-4 w-4" /></Button>
-              </div>
+            <div key={cab.id} className="space-y-3 rounded-md border p-3">
+              {editingId === cab.id ? (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div><Label htmlFor={`cab-name-${cab.id}`}>Cab name</Label><Input id={`cab-name-${cab.id}`} value={editDraft.name} onChange={(e) => setEditDraft({ ...editDraft, name: e.target.value })} /></div>
+                  <div><Label htmlFor={`cab-model-${cab.id}`}>Model</Label><Input id={`cab-model-${cab.id}`} value={editDraft.model} onChange={(e) => setEditDraft({ ...editDraft, model: e.target.value })} /></div>
+                  <div><Label htmlFor={`cab-seats-${cab.id}`}>Seats</Label><Input id={`cab-seats-${cab.id}`} type="number" min={1} value={editDraft.seats} onChange={(e) => setEditDraft({ ...editDraft, seats: e.target.value })} /></div>
+                  <div><Label htmlFor={`cab-cost-${cab.id}`}>Fixed cab price (₹)</Label><Input id={`cab-cost-${cab.id}`} type="number" min={0} step="0.01" value={editDraft.cost} onChange={(e) => setEditDraft({ ...editDraft, cost: e.target.value })} /></div>
+                  <div className="flex items-center gap-2 pt-6"><Switch checked={editDraft.ac} onCheckedChange={(ac) => setEditDraft({ ...editDraft, ac })} /><span className="text-sm">{editDraft.ac ? "AC" : "Non-AC"}</span></div>
+                  <div><Label htmlFor={`cab-features-${cab.id}`}>Features</Label><Input id={`cab-features-${cab.id}`} value={editDraft.features} placeholder="Luggage space, child seat" onChange={(e) => setEditDraft({ ...editDraft, features: e.target.value })} /></div>
+                  <div className="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-3">
+                    <Button type="button" size="sm" onClick={async () => {
+                      if (!editDraft.name.trim()) { toast.error("Enter a cab name"); return; }
+                      await update(cab.id, { name: editDraft.name.trim(), model: editDraft.model.trim(), seats: Math.max(1, Number(editDraft.seats) || 1), ac: editDraft.ac, features: editDraft.features.trim(), cost: Math.max(0, Number(editDraft.cost) || 0) });
+                      setEditingId(null);
+                    }}><Save className="h-4 w-4" />Save changes</Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => setEditingId(null)}>Cancel edit</Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold">{cab.name}{cab.model ? ` · ${cab.model}` : ""}</div>
+                    <div className="text-sm text-muted-foreground">{cab.seats} seater · {cab.ac ? "AC" : "Non-AC"} · {cab.features || "No extra features"}</div>
+                    <div className="mt-1 font-semibold">Fixed price: {inr(Number(cab.cost))}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={cab.active} onCheckedChange={(active) => update(cab.id, { active })} aria-label={`Make ${cab.name} ${cab.active ? "unavailable" : "available"}`} />
+                    <Button type="button" variant="outline" size="sm" onClick={() => {
+                      setEditDraft({ name: cab.name, model: cab.model, seats: String(cab.seats), ac: cab.ac, features: cab.features, cost: String(cab.cost) });
+                      setEditingId(cab.id);
+                    }}><Pencil className="h-4 w-4" />Edit</Button>
+                    <Button type="button" variant="ghost" size="icon" aria-label={`Delete ${cab.name}`} onClick={() => removeCab(cab.id)}><Trash2 className="h-4 w-4" /></Button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
           {q.data?.length === 0 && <p className="text-sm text-muted-foreground">No cab types added yet.</p>}
-          <form onSubmit={addCab} className="grid gap-3 border-t pt-4 sm:grid-cols-[1.2fr_0.7fr_0.65fr_1.6fr_auto] sm:items-end">
+          <form onSubmit={addCab} className="grid gap-3 border-t pt-4 sm:grid-cols-2 lg:grid-cols-3">
             <div><Label htmlFor="new-cab-name">Cab name</Label><Input id="new-cab-name" placeholder="e.g. Sedan" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required /></div>
+            <div><Label htmlFor="new-cab-model">Model</Label><Input id="new-cab-model" placeholder="e.g. Dzire" value={draft.model} onChange={(e) => setDraft({ ...draft, model: e.target.value })} /></div>
             <div><Label htmlFor="new-cab-seats">Seats</Label><Input id="new-cab-seats" type="number" min={1} value={draft.seats} onChange={(e) => setDraft({ ...draft, seats: e.target.value })} /></div>
-            <div className="flex items-center gap-2"><Switch checked={draft.ac} onCheckedChange={(ac) => setDraft({ ...draft, ac })} /><span className="text-sm">{draft.ac ? "AC" : "Non-AC"}</span></div>
-            <div><Label htmlFor="new-cab-features">Features</Label><Input id="new-cab-features" placeholder="e.g. luggage space, child seat" value={draft.features} onChange={(e) => setDraft({ ...draft, features: e.target.value })} /></div>
-            <Button type="submit"><Car className="mr-1 h-4 w-4" />Add cab</Button>
+            <div><Label htmlFor="new-cab-cost">Fixed cab price (₹)</Label><Input id="new-cab-cost" type="number" min={0} step="0.01" value={draft.cost} onChange={(e) => setDraft({ ...draft, cost: e.target.value })} /></div>
+            <div className="flex items-center gap-2 pt-6"><Switch checked={draft.ac} onCheckedChange={(ac) => setDraft({ ...draft, ac })} /><span className="text-sm">{draft.ac ? "AC" : "Non-AC"}</span></div>
+            <div><Label htmlFor="new-cab-features">Features</Label><Input id="new-cab-features" placeholder="Luggage space, child seat" value={draft.features} onChange={(e) => setDraft({ ...draft, features: e.target.value })} /></div>
+            <Button className="sm:col-span-2 lg:col-span-3" type="submit"><Car className="mr-1 h-4 w-4" />Add cab</Button>
           </form>
         </CardContent>
       </Card>

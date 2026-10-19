@@ -25,7 +25,7 @@ function Pick() {
   const list = (trips.data ?? []).filter((t) => !s || t.trip_code.toLowerCase().includes(s) || t.customer_name.toLowerCase().includes(s) || t.customer_phone.includes(s));
   return (
     <div className="min-h-screen">
-      <AppHeader title={me?.isAdmin ? "Admin" : "Driver"} name={me?.profile?.full_name} />
+      <AppHeader title={me?.isAdmin ? "Admin" : "Driver"} name={me?.profile?.full_name} backTo="/dashboard" />
       <main className="mx-auto max-w-3xl p-4">
         <Card>
           <CardHeader><CardTitle className="text-3xl font-normal">Select trip to invoice</CardTitle></CardHeader>

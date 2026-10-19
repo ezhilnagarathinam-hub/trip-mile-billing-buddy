@@ -21,12 +21,13 @@ export const waPhone = (p: string) => {
 
 export function calcTotal(t: {
   distance_km: number; rate_per_km: number; up_down: boolean; driver_bata: number;
-  admin_charges: Charge[]; extra_charges: Charge[];
+  admin_charges: Charge[]; extra_charges: Charge[]; cab_charge?: number;
 }) {
   const billedKm = Number(t.distance_km) * (t.up_down ? 2 : 1);
   const kmCharge = Math.round(billedKm * Number(t.rate_per_km));
   const sum = (a: Charge[]) => a.reduce((s, c) => s + Number(c.amount || 0), 0);
-  return { billedKm, kmCharge, total: kmCharge + Number(t.driver_bata || 0) + sum(t.admin_charges) + sum(t.extra_charges) };
+  const cabCharge = Number(t.cab_charge || 0);
+  return { billedKm, kmCharge, cabCharge, total: kmCharge + Number(t.driver_bata || 0) + sum(t.admin_charges) + sum(t.extra_charges) + cabCharge };
 }
 
 export const statusStyle: Record<string, string> = {
@@ -35,4 +36,5 @@ export const statusStyle: Record<string, string> = {
   invoiced: "bg-primary text-primary-foreground",
   paid: "bg-success text-success-foreground",
   closed: "bg-ink text-ink-foreground",
+  cancelled: "bg-destructive text-destructive-foreground",
 };

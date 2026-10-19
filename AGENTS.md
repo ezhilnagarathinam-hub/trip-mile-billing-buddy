@@ -9,4 +9,4 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Keep the admin-managed cab catalog separate from trip records, and snapshot the chosen cab details on each trip so invoices remain historically accurate when catalog entries change.
+- Keep admin-managed cab catalog entries separate from trips, and snapshot the selected cab description and fixed price plus any invoice cancellation reason on each trip so invoices remain historically accurate and voids remain reviewable.
