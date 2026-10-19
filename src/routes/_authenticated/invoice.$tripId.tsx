@@ -18,10 +18,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { BRAND, calcTotal, fmtDT, fmtDur, inr, statusStyle, waPhone, type Charge } from "@/lib/format";
+import { BRAND, calcTotal, fmtDT, fmtDur, inr, normalizeCancellationReason, statusStyle, waPhone, type Charge } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/invoice/$tripId")({
-  head: () => ({ meta: [{ title: "Invoice — Raman Travels" }, { name: "description", content: "Trip invoice and sharing." }] }),
+  head: () => ({ meta: [
+    { title: "Trip Invoice — Raman Travels" },
+    { name: "description", content: "Review trip details, charges, payment and invoice sharing." },
+    { property: "og:title", content: "Trip Invoice — Raman Travels" },
+    { property: "og:description", content: "Review trip details, charges, payment and invoice sharing." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: InvoicePage,
 });
 
@@ -118,7 +125,7 @@ function InvoicePage() {
   }
 
   async function cancelInvoice() {
-    const reason = cancelReason.trim();
+    const reason = normalizeCancellationReason(cancelReason);
     if (!reason) { toast.error("Enter a reason for cancelling this invoice"); return; }
     const saved = await save({ status: "cancelled", cancel_reason: reason, cancelled_at: new Date().toISOString() }, "Invoice cancelled");
     if (saved) { setCancelOpen(false); setCancelReason(""); }
@@ -232,7 +239,7 @@ function InvoicePage() {
                     <SelectTrigger><SelectValue placeholder="Choose a cab (optional)" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">No cab selected</SelectItem>
-                  {q.data?.cabs.map((cab) => <SelectItem key={cab.id} value={cab.id}>{cab.name}{cab.model ? ` · ${cab.model}` : ""} · {cab.seats} seater · {cab.ac ? "AC" : "Non-AC"} · ${inr(Number(cab.cost))}</SelectItem>)}
+                  {q.data?.cabs.map((cab) => <SelectItem key={cab.id} value={cab.id}>{cab.name}{cab.model ? ` · ${cab.model}` : ""} · {cab.seats} seater · {cab.ac ? "AC" : "Non-AC"} · {inr(Number(cab.cost))}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   {selectedCab && <p className="mt-1 text-xs text-muted-foreground">{selectedCab.features || "No additional features"} · Fixed price {inr(Number(selectedCab.cost))}</p>}
@@ -253,7 +260,7 @@ function InvoicePage() {
 
         <div className="space-y-4">
           <InvoiceCard refEl={cardRef} trip={trip} />
-          {invoiced && (
+          {invoiced && !cancelled && (
             <Card>
               <CardContent className="space-y-3 pt-6">
                 <div className="grid grid-cols-2 gap-2">

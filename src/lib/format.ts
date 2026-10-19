@@ -19,6 +19,8 @@ export const waPhone = (p: string) => {
   return d.length === 10 ? "91" + d : d;
 };
 
+export const normalizeCancellationReason = (reason: string) => reason.trim() || null;
+
 export function calcTotal(t: {
   distance_km: number; rate_per_km: number; up_down: boolean; driver_bata: number;
   admin_charges: Charge[]; extra_charges: Charge[]; cab_charge?: number;

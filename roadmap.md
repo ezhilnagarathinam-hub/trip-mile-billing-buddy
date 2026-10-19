@@ -4,5 +4,5 @@
 - [x] Confirm the database migration applied, existing app test passes, and latest preview build succeeds.
 - [x] Add admin-editable cab models and fixed prices, snapshot selected price, and include it in invoices and totals.
 - [x] Add back navigation to app pages.
-- [ ] Allow customer contact edits before invoicing and allow reasoned invoice voids that admins can review.
+- [x] Allow customer contact edits before invoicing and allow reasoned invoice voids that admins can review.
 - [ ] Verify migration, build, tests, and app flows.

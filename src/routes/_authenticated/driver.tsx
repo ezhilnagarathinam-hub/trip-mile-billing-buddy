@@ -15,7 +15,14 @@ import { getPosition, reverseGeocode, roadRoute } from "@/lib/geo";
 import { fmtDT, fmtDur, inr, statusStyle } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/driver")({
-  head: () => ({ meta: [{ title: "Driver Portal — Raman Travels" }, { name: "description", content: "Start and end trips, create invoices." }] }),
+  head: () => ({ meta: [
+    { title: "Driver Trips — Raman Travels" },
+    { name: "description", content: "Record customer trips, track their routes and prepare invoices." },
+    { property: "og:title", content: "Driver Trips — Raman Travels" },
+    { property: "og:description", content: "Record customer trips, track their routes and prepare invoices." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: DriverPage,
 });
 

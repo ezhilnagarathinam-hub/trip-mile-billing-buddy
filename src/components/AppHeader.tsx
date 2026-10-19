@@ -5,7 +5,7 @@ import { Logo } from "./Logo";
 import { Button } from "./ui/button";
 import { BackButton, type BackDestination } from "./BackButton";
 
-export function AppHeader({ title, name, backTo = "/dashboard" }: { title: string; name?: string | undefined; backTo?: BackDestination }) {
+export function AppHeader({ title, name, backTo = "/" }: { title: string; name?: string | undefined; backTo?: BackDestination }) {
   const navigate = useNavigate();
   return (
     <header className="bg-ink text-ink-foreground">

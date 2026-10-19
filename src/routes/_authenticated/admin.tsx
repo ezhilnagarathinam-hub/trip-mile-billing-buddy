@@ -16,7 +16,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { fmtDT, fmtDur, inr, statusStyle } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin")({
-  head: () => ({ meta: [{ title: "Admin Dashboard — Raman Travels" }, { name: "description", content: "Driver reports, approvals and charges." }] }),
+  head: () => ({ meta: [
+    { title: "Admin Reports & Settings — Raman Travels" },
+    { name: "description", content: "Review travel reports, approve drivers and manage charges and cab details." },
+    { property: "og:title", content: "Admin Reports & Settings — Raman Travels" },
+    { property: "og:description", content: "Review travel reports, approve drivers and manage charges and cab details." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AdminPage,
 });
 

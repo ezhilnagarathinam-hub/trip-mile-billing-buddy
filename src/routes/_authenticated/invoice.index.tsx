@@ -10,7 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fmtDT, inr, statusStyle } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/invoice/")({
-  head: () => ({ meta: [{ title: "Create Invoice — Raman Travels" }, { name: "description", content: "Pick a trip to invoice." }] }),
+  head: () => ({ meta: [
+    { title: "Choose a Trip for Invoicing — Raman Travels" },
+    { name: "description", content: "Find a completed trip and prepare its Raman Travels invoice." },
+    { property: "og:title", content: "Choose a Trip for Invoicing — Raman Travels" },
+    { property: "og:description", content: "Find a completed trip and prepare its Raman Travels invoice." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: Pick,
 });
 

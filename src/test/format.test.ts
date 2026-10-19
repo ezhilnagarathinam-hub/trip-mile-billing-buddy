@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calcTotal } from "@/lib/format";
+import { calcTotal, normalizeCancellationReason } from "@/lib/format";
 
 describe("invoice total", () => {
   it("adds the fixed cab price once alongside distance, admin, and driver charges", () => {
@@ -16,5 +16,10 @@ describe("invoice total", () => {
     expect(result.kmCharge).toBe(400);
     expect(result.cabCharge).toBe(2000);
     expect(result.total).toBe(2790);
+  });
+
+  it("requires a non-empty cancellation reason", () => {
+    expect(normalizeCancellationReason("   ")).toBeNull();
+    expect(normalizeCancellationReason("Customer requested correction")).toBe("Customer requested correction");
   });
 });
