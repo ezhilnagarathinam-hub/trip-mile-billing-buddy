@@ -208,10 +208,11 @@ function CabTypes() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState({ name: "", model: "", seats: "4", ac: true, features: "", cost: "0" });
 
-  async function update(id: string, patch: { name?: string; model?: string; seats?: number; ac?: boolean; features?: string; cost?: number; active?: boolean }) {
+  async function update(id: string, patch: { name?: string; model?: string; seats?: number; ac?: boolean; features?: string; cost?: number; active?: boolean }): Promise<boolean> {
     const { error } = await supabase.from("cab_types").update(patch).eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(error.message); return false; }
     qc.invalidateQueries({ queryKey: ["cab-types"] });
+    return true;
   }
 
   async function addCab(e: React.FormEvent) {
@@ -251,8 +252,10 @@ function CabTypes() {
                   <div className="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-3">
                     <Button type="button" size="sm" onClick={async () => {
                       if (!editDraft.name.trim()) { toast.error("Enter a cab name"); return; }
-                      await update(cab.id, { name: editDraft.name.trim(), model: editDraft.model.trim(), seats: Math.max(1, Number(editDraft.seats) || 1), ac: editDraft.ac, features: editDraft.features.trim(), cost: Math.max(0, Number(editDraft.cost) || 0) });
-                      setEditingId(null);
+                      if (await update(cab.id, { name: editDraft.name.trim(), model: editDraft.model.trim(), seats: Math.max(1, Number(editDraft.seats) || 1), ac: editDraft.ac, features: editDraft.features.trim(), cost: Math.max(0, Number(editDraft.cost) || 0) })) {
+                        toast.success("Cab details saved");
+                        setEditingId(null);
+                      }
                     }}><Save className="h-4 w-4" />Save changes</Button>
                     <Button type="button" size="sm" variant="outline" onClick={() => setEditingId(null)}>Cancel edit</Button>
                   </div>

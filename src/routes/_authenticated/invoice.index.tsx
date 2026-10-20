@@ -48,7 +48,7 @@ function Pick() {
                   <div className="text-xs text-muted-foreground">{t.customer_phone} · {fmtDT(t.start_time)}</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`rounded px-2 py-0.5 text-xs font-semibold uppercase ${statusStyle[t.status]}`}>{t.status}</span>
+                  <span className={`rounded px-2 py-0.5 text-xs font-semibold uppercase ${statusStyle[t.status] ?? "bg-muted text-foreground"}`}>{t.status}</span>
                   {Number(t.total_amount) > 0 && <b>{inr(Number(t.total_amount))}</b>}
                 </div>
               </Link>

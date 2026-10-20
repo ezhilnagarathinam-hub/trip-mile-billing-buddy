@@ -45,7 +45,7 @@ function DriverPage() {
 
   return (
     <div className="min-h-screen">
-      <AppHeader title="Driver" name={me.profile?.full_name || me.user.email} backTo="/dashboard" />
+      <AppHeader title="Driver" name={me.profile?.full_name || me.user.email} backTo="/" />
       <main className="mx-auto max-w-4xl space-y-6 p-4">
         {status !== "approved" ? (
           <Card><CardContent className="py-10 text-center">
@@ -72,7 +72,7 @@ function DriverPage() {
                   <div className="text-xs text-muted-foreground">{fmtDT(t.start_time)} · {t.distance_km} km · {fmtDur(t.duration_min)}</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`rounded px-2 py-0.5 text-xs font-semibold uppercase ${statusStyle[t.status]}`}>{t.status}</span>
+                  <span className={`rounded px-2 py-0.5 text-xs font-semibold uppercase ${statusStyle[t.status] ?? "bg-muted text-foreground"}`}>{t.status}</span>
                   {Number(t.total_amount) > 0 && <span className="font-semibold">{inr(Number(t.total_amount))}</span>}
                   {t.status !== "ongoing" && (
                     <Button size="sm" asChild><Link to="/invoice/$tripId" params={{ tripId: t.id }}>Open</Link></Button>
