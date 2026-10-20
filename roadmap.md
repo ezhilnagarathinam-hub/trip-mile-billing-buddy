@@ -5,4 +5,5 @@
 - [x] Add admin-editable cab models and fixed prices, snapshot selected price, and include it in invoices and totals.
 - [x] Add back navigation to app pages.
 - [x] Allow customer contact edits before invoicing and allow reasoned invoice voids that admins can review.
-- [ ] Verify migration, build, tests, and app flows.
+- [x] Verify migrations, build, tests, and public sign-in back navigation.
+- [ ] Verify cab editing, customer changes, and invoice cancellation in the authenticated preview — blocked until the user selects one of the existing accounts to test.

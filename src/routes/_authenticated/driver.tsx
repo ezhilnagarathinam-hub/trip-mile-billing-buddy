@@ -45,7 +45,7 @@ function DriverPage() {
 
   return (
     <div className="min-h-screen">
-      <AppHeader title="Driver" name={me.profile?.full_name || me.user.email} backTo="/dashboard" />
+      <AppHeader title="Driver" name={me.profile?.full_name || me.user.email} backTo="/" />
       <main className="mx-auto max-w-4xl space-y-6 p-4">
         {status !== "approved" ? (
           <Card><CardContent className="py-10 text-center">

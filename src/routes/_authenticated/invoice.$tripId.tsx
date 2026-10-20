@@ -117,6 +117,7 @@ function InvoicePage() {
   function generate() {
     if (!customerName.trim()) { toast.error("Enter the customer's name"); return; }
     if (!/^\d{10}$/.test(customerPhone.replace(/\D/g, "").slice(-10))) { toast.error("Enter a valid 10-digit phone number"); return; }
+    if (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim())) { toast.error("Enter a valid email address"); return; }
     save({
       customer_name: customerName.trim(), customer_phone: customerPhone.trim(), customer_email: customerEmail.trim(),
       distance_km: Number(km), rate_per_km: Number(rate), driver_bata: Number(bata), up_down: upDown,
