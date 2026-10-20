@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Mail, MessageCircle, MessageSquare, Plus, Share2, Trash2, CheckCircle2, Heart, Copy, Ban } from "lucide-react";
+import { Download, Mail, MessageCircle, MessageSquare, Plus, Share2, Trash2, CheckCircle2, Heart, Copy, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesUpdate } from "@/integrations/supabase/types";
 import { useMe } from "@/hooks/use-auth";
@@ -185,7 +185,6 @@ function InvoicePage() {
       <AppHeader title={me?.isAdmin ? "Admin" : "Driver"} name={me?.profile?.full_name} backTo={me?.isAdmin ? "/admin" : "/driver"} />
       <main className="mx-auto grid max-w-6xl gap-6 p-4 lg:grid-cols-2">
         <div className="space-y-4">
-          <Link to={me?.isAdmin ? "/admin" : "/driver"} className="inline-flex items-center text-sm text-muted-foreground"><ArrowLeft className="mr-1 h-4 w-4" />Back</Link>
           {trip.start_lat != null && trip.end_lat != null && (
             <RouteMap a={{ lat: trip.start_lat, lng: trip.start_lng! }} b={{ lat: trip.end_lat, lng: trip.end_lng! }} />
           )}
@@ -206,7 +205,7 @@ function InvoicePage() {
                 <div><Label htmlFor="invoice-customer-phone">Contact number</Label><Input id="invoice-customer-phone" type="tel" inputMode="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} /></div>
                 <div className="sm:col-span-2"><Label htmlFor="invoice-customer-email">Email</Label><Input id="invoice-customer-email" type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} /></div>
               </fieldset>}
-              <fieldset disabled={locked || cancelled || busy} className="space-y-4">
+              <fieldset disabled={locked || cancelled || invoiced || busy} className="space-y-4">
                 <div className="grid grid-cols-3 gap-2">
                   <div><Label>Distance (km)</Label><Input type="number" step="0.1" value={km} onChange={(e) => setKm(e.target.value)} /></div>
                   <div><Label>₹ per km</Label><Input type="number" value={rate} onChange={(e) => setRate(e.target.value)} /></div>
