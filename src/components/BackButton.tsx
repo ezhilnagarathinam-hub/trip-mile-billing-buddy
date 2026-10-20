@@ -8,9 +8,7 @@ export function BackButton({ to, label = "Back" }: { to: BackDestination; label?
   const navigate = useNavigate();
   return (
     <Button variant="ghost" size="sm" aria-label={label} onClick={() => {
-      const state = window.history.state as { __TSR_index?: number } | null;
-      if (state && typeof state.__TSR_index === "number" && state.__TSR_index > 0) window.history.back();
-      else navigate({ to });
+      navigate({ to });
     }}>
         <ArrowLeft aria-hidden="true" />
         <span>{label}</span>

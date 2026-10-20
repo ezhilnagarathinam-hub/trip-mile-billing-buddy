@@ -93,7 +93,9 @@ function InvoicePage() {
   const invoiced = !!trip.invoiced_at;
   const locked = trip.status === "paid" || trip.status === "closed";
   const selectedCab = q.data?.cabs.find((cab) => cab.id === cabType);
-  const cabCharge = selectedCab ? Number(selectedCab.cost) : cabType === trip.cab_type ? Number(trip.cab_charge) : 0;
+  const cabCharge = trip.invoiced_at
+    ? Number(trip.cab_charge)
+    : selectedCab ? Number(selectedCab.cost) : cabType === trip.cab_type ? Number(trip.cab_charge) : 0;
   const calc = calcTotal({ distance_km: Number(km), rate_per_km: Number(rate), up_down: upDown, driver_bata: Number(bata), admin_charges: adminCharges, extra_charges: cleanExtras, cab_charge: cabCharge });
   const selectedCabDetails = selectedCab
     ? `${selectedCab.name}${selectedCab.model ? ` · ${selectedCab.model}` : ""} · ${selectedCab.seats} seater · ${selectedCab.ac ? "AC" : "Non-AC"}${selectedCab.features.trim() ? ` · ${selectedCab.features.trim()}` : ""}`
