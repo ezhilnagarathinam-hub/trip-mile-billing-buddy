@@ -29,6 +29,13 @@
       "when": 1792427976677,
       "tag": "0003_require_invoice_cancellation_reason",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792471927998,
+      "tag": "0004_limit_invoice_cancellation_to_unpaid",
+      "breakpoints": true
     }
   ]
 }
