@@ -139,12 +139,15 @@ function Charges() {
   const qc = useQueryClient();
   const s = useQuery({ queryKey: ["settings"], queryFn: async () => (await supabase.from("settings").select("*").eq("id", 1).single()).data });
   const items = useQuery({ queryKey: ["charge-items"], queryFn: async () => (await supabase.from("charge_items").select("*").order("created_at")).data ?? [] });
-  const [f, setF] = useState({ rate: "", bata: "", link: "", upDown: false });
+  const [f, setF] = useState({ rate: "", minimumKm: "0", minimumFare: "0", bata: "", link: "", upDown: false });
   const [n, setN] = useState({ name: "", amount: "" });
-  useEffect(() => { if (s.data) setF({ rate: String(s.data.rate_per_km), bata: String(s.data.driver_bata), link: s.data.default_payment_link, upDown: s.data.up_down }); }, [s.data]);
+  useEffect(() => { if (s.data) setF({ rate: String(s.data.rate_per_km), minimumKm: String(s.data.minimum_km), minimumFare: String(s.data.minimum_fare), bata: String(s.data.driver_bata), link: s.data.default_payment_link, upDown: s.data.up_down }); }, [s.data]);
 
   async function saveSettings() {
-    const { error } = await supabase.from("settings").update({ rate_per_km: Number(f.rate), driver_bata: Number(f.bata), default_payment_link: f.link, up_down: f.upDown, updated_at: new Date().toISOString() }).eq("id", 1);
+    const minimumKm = Number(f.minimumKm);
+    const minimumFare = Number(f.minimumFare);
+    if ((minimumKm > 0) !== (minimumFare > 0)) { toast.error("Enter both the minimum kilometres and fixed fare, or set both to zero"); return; }
+    const { error } = await supabase.from("settings").update({ rate_per_km: Number(f.rate), minimum_km: minimumKm, minimum_fare: minimumFare, driver_bata: Number(f.bata), default_payment_link: f.link, up_down: f.upDown, updated_at: new Date().toISOString() }).eq("id", 1);
     if (error) { toast.error(error.message); return; }
     toast.success("Charges saved — applied to new trips"); qc.invalidateQueries({ queryKey: ["settings"] });
   }
@@ -165,6 +168,11 @@ function Charges() {
         <CardHeader><CardTitle className="text-3xl font-normal">Fixed charges</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <div><Label>Rate per km (₹)</Label><Input type="number" value={f.rate} onChange={(e) => setF({ ...f, rate: e.target.value })} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Minimum distance (km)</Label><Input type="number" min={0} step="0.1" value={f.minimumKm} onChange={(e) => setF({ ...f, minimumKm: e.target.value })} /></div>
+            <div><Label>Fixed fare for minimum distance (₹)</Label><Input type="number" min={0} step="0.01" value={f.minimumFare} onChange={(e) => setF({ ...f, minimumFare: e.target.value })} /></div>
+          </div>
+          <p className="text-sm text-muted-foreground">{Number(f.minimumKm) > 0 && Number(f.minimumFare) > 0 ? `First ${f.minimumKm} km: ${inr(Number(f.minimumFare))}; distance beyond that: ${inr(Number(f.rate))} per km.` : "Set both minimum distance and fixed fare to enable the minimum trip fare."}</p>
           <div><Label>Driver bata (₹ per trip)</Label><Input type="number" value={f.bata} onChange={(e) => setF({ ...f, bata: e.target.value })} /></div>
           <label className="flex items-center gap-2 text-sm"><Switch checked={f.upDown} onCheckedChange={(v) => setF({ ...f, upDown: v })} />Charge up & down by default (km × 2)</label>
           <div><Label>Default payment link (UPI / gateway)</Label><Input placeholder="https://rzp.io/… or upi://pay?pa=…" value={f.link} onChange={(e) => setF({ ...f, link: e.target.value })} /></div>

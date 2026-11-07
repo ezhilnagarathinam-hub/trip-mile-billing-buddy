@@ -21,15 +21,29 @@ export const waPhone = (p: string) => {
 
 export const normalizeCancellationReason = (reason: string) => reason.trim() || null;
 
+export function calcDistanceCharge(t: {
+  distance_km: number; rate_per_km: number; up_down: boolean;
+  minimum_km?: number; minimum_fare?: number;
+}) {
+  const billedKm = Number(t.distance_km) * (t.up_down ? 2 : 1);
+  const minimumKm = Math.max(0, Number(t.minimum_km || 0));
+  const fixedFare = minimumKm > 0 ? Math.max(0, Number(t.minimum_fare || 0)) : 0;
+  const extraKm = minimumKm > 0 ? Math.max(0, billedKm - minimumKm) : billedKm;
+  const extraKmCharge = Math.round(extraKm * Number(t.rate_per_km));
+  return { billedKm, fixedFare, extraKm, extraKmCharge, total: fixedFare + extraKmCharge };
+}
+
 export function calcTotal(t: {
   distance_km: number; rate_per_km: number; up_down: boolean; driver_bata: number;
   admin_charges: Charge[]; extra_charges: Charge[]; cab_charge?: number;
+  minimum_km?: number; minimum_fare?: number;
 }) {
-  const billedKm = Number(t.distance_km) * (t.up_down ? 2 : 1);
-  const kmCharge = Math.round(billedKm * Number(t.rate_per_km));
+  const distanceCharge = calcDistanceCharge(t);
+  const { billedKm } = distanceCharge;
+  const kmCharge = distanceCharge.total;
   const sum = (a: Charge[]) => a.reduce((s, c) => s + Number(c.amount || 0), 0);
   const cabCharge = Number(t.cab_charge || 0);
-  return { billedKm, kmCharge, cabCharge, total: kmCharge + Number(t.driver_bata || 0) + sum(t.admin_charges) + sum(t.extra_charges) + cabCharge };
+  return { billedKm, kmCharge, distanceCharge, cabCharge, total: kmCharge + Number(t.driver_bata || 0) + sum(t.admin_charges) + sum(t.extra_charges) + cabCharge };
 }
 
 export const statusStyle: Record<string, string> = {

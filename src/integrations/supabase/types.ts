@@ -106,6 +106,8 @@ export type Database = {
           default_payment_link: string
           driver_bata: number
           id: number
+          minimum_fare: number
+          minimum_km: number
           rate_per_km: number
           up_down: boolean
           updated_at: string
@@ -114,6 +116,8 @@ export type Database = {
           default_payment_link?: string
           driver_bata?: number
           id?: number
+          minimum_fare?: number
+          minimum_km?: number
           rate_per_km?: number
           up_down?: boolean
           updated_at?: string
@@ -122,6 +126,8 @@ export type Database = {
           default_payment_link?: string
           driver_bata?: number
           id?: number
+          minimum_fare?: number
+          minimum_km?: number
           rate_per_km?: number
           up_down?: boolean
           updated_at?: string
@@ -155,6 +161,8 @@ export type Database = {
           id: string
           invoiced_at: string | null
           km_charge: number
+          minimum_fare: number
+          minimum_km: number
           paid_at: string | null
           payment_link: string
           rate_per_km: number
@@ -194,6 +202,8 @@ export type Database = {
           id?: string
           invoiced_at?: string | null
           km_charge?: number
+          minimum_fare?: number
+          minimum_km?: number
           paid_at?: string | null
           payment_link?: string
           rate_per_km?: number
@@ -233,6 +243,8 @@ export type Database = {
           id?: string
           invoiced_at?: string | null
           km_charge?: number
+          minimum_fare?: number
+          minimum_km?: number
           paid_at?: string | null
           payment_link?: string
           rate_per_km?: number
