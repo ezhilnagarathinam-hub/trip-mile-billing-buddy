@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { BRAND, calcTotal, fmtDT, fmtDur, inr, normalizeCancellationReason, statusStyle, waPhone, type Charge } from "@/lib/format";
+import { BRAND, calcDistanceCharge, calcTotal, fmtDT, fmtDur, inr, normalizeCancellationReason, statusStyle, waPhone, type Charge } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/invoice/$tripId")({
   head: () => ({ meta: [
@@ -53,6 +53,8 @@ function InvoicePage() {
   const trip = q.data?.trip;
   const [km, setKm] = useState("0");
   const [rate, setRate] = useState("0");
+  const [minimumKm, setMinimumKm] = useState("0");
+  const [minimumFare, setMinimumFare] = useState("0");
   const [bata, setBata] = useState("0");
   const [upDown, setUpDown] = useState(false);
   const [admin, setAdmin] = useState<Record<string, number | null>>({});
@@ -69,7 +71,7 @@ function InvoicePage() {
 
   useEffect(() => {
     if (!trip || !q.data) return;
-    setKm(String(trip.distance_km)); setRate(String(trip.rate_per_km)); setBata(String(trip.driver_bata));
+    setKm(String(trip.distance_km)); setRate(String(trip.rate_per_km)); setMinimumKm(String(trip.minimum_km)); setMinimumFare(String(trip.minimum_fare)); setBata(String(trip.driver_bata));
     setUpDown(trip.up_down); setLink(trip.payment_link);
     setCabType(trip.cab_type ?? "");
     setCustomerName(trip.customer_name);
@@ -96,7 +98,7 @@ function InvoicePage() {
   const cabCharge = trip.invoiced_at
     ? Number(trip.cab_charge)
     : selectedCab ? Number(selectedCab.cost) : cabType === trip.cab_type ? Number(trip.cab_charge) : 0;
-  const calc = calcTotal({ distance_km: Number(km), rate_per_km: Number(rate), up_down: upDown, driver_bata: Number(bata), admin_charges: adminCharges, extra_charges: cleanExtras, cab_charge: cabCharge });
+  const calc = calcTotal({ distance_km: Number(km), rate_per_km: Number(rate), up_down: upDown, minimum_km: Number(minimumKm), minimum_fare: Number(minimumFare), driver_bata: Number(bata), admin_charges: adminCharges, extra_charges: cleanExtras, cab_charge: cabCharge });
   const selectedCabDetails = selectedCab
     ? `${selectedCab.name}${selectedCab.model ? ` · ${selectedCab.model}` : ""} · ${selectedCab.seats} seater · ${selectedCab.ac ? "AC" : "Non-AC"}${selectedCab.features.trim() ? ` · ${selectedCab.features.trim()}` : ""}`
     : cabType === trip.cab_type ? trip.cab_details ?? "" : "";
@@ -209,9 +211,13 @@ function InvoicePage() {
               <fieldset disabled={locked || cancelled || invoiced || busy} className="space-y-4">
                 <div className="grid grid-cols-3 gap-2">
                   <div><Label>Distance (km)</Label><Input type="number" step="0.1" value={km} onChange={(e) => setKm(e.target.value)} /></div>
-                  <div><Label>₹ per km</Label><Input type="number" value={rate} onChange={(e) => setRate(e.target.value)} /></div>
+                  <div><Label>₹ per km (set by admin)</Label><Input type="number" value={rate} disabled /></div>
                   <div><Label>Driver bata ₹</Label><Input type="number" value={bata} onChange={(e) => setBata(e.target.value)} /></div>
                 </div>
+                {Number(minimumKm) > 0 && <div className="rounded-md border bg-muted/40 p-3 text-sm">
+                  <div className="font-semibold">Admin fare: first {minimumKm} km at {inr(Number(minimumFare))}</div>
+                  <div className="text-muted-foreground">{calc.distanceCharge.extraKm > 0 ? `${calc.distanceCharge.extraKm} additional km × ${inr(Number(rate))}/km = ${inr(calc.distanceCharge.extraKmCharge)}` : "Additional distance is charged at the admin-set per-kilometre rate."}</div>
+                </div>}
                 <label className="flex items-center gap-2 text-sm"><Switch checked={upDown} onCheckedChange={setUpDown} />Up & down (return trip — km × 2)</label>
                 <div>
                   <Label>Admin charges</Label>
@@ -311,8 +317,12 @@ function InvoicePage() {
 type TripRow = Tables<"trips">;
 
 function InvoiceCard({ trip, refEl }: { trip: TripRow; refEl: React.RefObject<HTMLDivElement | null> }) {
+  const distanceCharge = calcDistanceCharge({ distance_km: Number(trip.distance_km), rate_per_km: Number(trip.rate_per_km), up_down: trip.up_down, minimum_km: Number(trip.minimum_km), minimum_fare: Number(trip.minimum_fare) });
+  const distanceLabel = Number(trip.minimum_km) > 0
+    ? `Distance charge (first ${trip.minimum_km} km ${inr(Number(trip.minimum_fare))}${distanceCharge.extraKm > 0 ? ` + ${distanceCharge.extraKm} km × ${inr(Number(trip.rate_per_km))}/km` : ""})`
+    : `KM charge (${trip.distance_km} km${trip.up_down ? " × 2" : ""} × ₹${trip.rate_per_km})`;
   const rows: [string, string][] = [
-    [`KM charge (${trip.distance_km} km${trip.up_down ? " × 2" : ""} × ₹${trip.rate_per_km})`, inr(Number(trip.km_charge))],
+    [distanceLabel, inr(Number(trip.km_charge))],
     ...(Number(trip.cab_charge) ? [[`Cab price${trip.cab_details ? ` · ${trip.cab_details.split(" · ")[0]}` : ""}`, inr(Number(trip.cab_charge))] as [string, string]] : []),
     ...(Number(trip.driver_bata) ? [["Driver bata", inr(Number(trip.driver_bata))] as [string, string]] : []),
     ...((trip.admin_charges as Charge[]) ?? []).map((c) => [c.name, inr(c.amount)] as [string, string]),
