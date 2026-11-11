@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calcDistanceCharge, calcTotal, normalizeCancellationReason } from "@/lib/format";
+import { calcDistanceCharge, calcTotal, normalizeCancellationReason, summarizeDriverBata } from "@/lib/format";
 
 describe("invoice total", () => {
   it("adds the fixed cab price once alongside distance, admin, and driver charges", () => {
@@ -37,5 +37,19 @@ describe("invoice total", () => {
   it("requires a non-empty cancellation reason", () => {
     expect(normalizeCancellationReason("   ")).toBeNull();
     expect(normalizeCancellationReason("Customer requested correction")).toBe("Customer requested correction");
+  });
+});
+
+describe("driver bata settlement totals", () => {
+  it("totals earned, settled, and pending bata for each driver", () => {
+    const [driver] = summarizeDriverBata([
+      { driver_id: "driver-1", driver_name: "Ravi", driver_bata: 300, driver_bata_settled: true },
+      { driver_id: "driver-1", driver_name: "Ravi", driver_bata: 300, driver_bata_settled: false },
+    ]);
+
+    expect(driver?.earned).toBe(600);
+    expect(driver?.settled).toBe(300);
+    expect(driver?.pending).toBe(300);
+    expect(driver?.trips).toHaveLength(2);
   });
 });

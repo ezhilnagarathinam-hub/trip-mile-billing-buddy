@@ -2,7 +2,7 @@ import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Check, X, Trash2, Plus, Car, Pencil, Save } from "lucide-react";
+import { Check, X, Trash2, Plus, Car, Pencil, Save, BadgeCheck, Clock3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
@@ -13,14 +13,14 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { fmtDT, fmtDur, inr, statusStyle } from "@/lib/format";
+import { fmtDT, fmtDur, inr, statusStyle, summarizeDriverBata } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [
     { title: "Admin Reports & Settings — Raman Travels" },
-    { name: "description", content: "Review travel reports, approve drivers and manage charges and cab details." },
+    { name: "description", content: "Review travel reports, approve drivers, manage charges, and track driver bata settlements." },
     { property: "og:title", content: "Admin Reports & Settings — Raman Travels" },
-    { property: "og:description", content: "Review travel reports, approve drivers and manage charges and cab details." },
+    { property: "og:description", content: "Review travel reports, approve drivers, manage charges, and track driver bata settlements." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
@@ -36,9 +36,10 @@ function AdminPage() {
       <AppHeader title="Admin" name={me.profile?.full_name} />
       <main className="mx-auto max-w-6xl p-4">
         <Tabs defaultValue="reports">
-          <TabsList className="grid w-full grid-cols-4"><TabsTrigger value="reports">Travel report</TabsTrigger><TabsTrigger value="drivers">Drivers</TabsTrigger><TabsTrigger value="charges">Charges</TabsTrigger><TabsTrigger value="cabs">Cab types</TabsTrigger></TabsList>
+          <TabsList className="grid w-full grid-cols-2 gap-1 sm:grid-cols-5"><TabsTrigger value="reports">Travel report</TabsTrigger><TabsTrigger value="drivers">Drivers</TabsTrigger><TabsTrigger value="bata">Driver bata</TabsTrigger><TabsTrigger value="charges">Charges</TabsTrigger><TabsTrigger value="cabs">Cab types</TabsTrigger></TabsList>
           <TabsContent value="reports"><Reports /></TabsContent>
           <TabsContent value="drivers"><Drivers /></TabsContent>
+          <TabsContent value="bata"><DriverBata /></TabsContent>
           <TabsContent value="charges"><Charges /></TabsContent>
           <TabsContent value="cabs"><CabTypes /></TabsContent>
         </Tabs>
@@ -132,6 +133,90 @@ function Drivers() {
       ))}
       {q.data?.length === 0 && <p className="text-muted-foreground">No drivers yet.</p>}
     </CardContent></Card>
+  );
+}
+
+function DriverBata() {
+  const qc = useQueryClient();
+  const trips = useQuery({
+    queryKey: ["bata-settlements"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("trips").select("*").not("end_time", "is", null).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+  const [saving, setSaving] = useState<string | null>(null);
+  const rows = trips.data ?? [];
+  const summaries = summarizeDriverBata(rows);
+  const earned = summaries.reduce((sum, driver) => sum + driver.earned, 0);
+  const settled = summaries.reduce((sum, driver) => sum + driver.settled, 0);
+  const pending = earned - settled;
+
+  async function setSettled(tripId: string, isSettled: boolean) {
+    setSaving(tripId);
+    const { error } = await supabase.from("trips").update({ driver_bata_settled: isSettled }).eq("id", tripId);
+    setSaving(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success(isSettled ? "Driver bata marked settled" : "Driver bata marked pending");
+    qc.invalidateQueries({ queryKey: ["bata-settlements"] });
+    qc.invalidateQueries({ queryKey: ["all-trips"] });
+  }
+
+  return (
+    <div className="space-y-5 pt-4">
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[["Total bata", inr(earned)], ["Settled", inr(settled)], ["Pending", inr(pending)]].map(([label, value]) => (
+          <div key={label} className="rounded-lg bg-ink p-4 text-ink-foreground">
+            <div className="text-xs uppercase tracking-widest opacity-70">{label}</div>
+            <div className="font-display text-3xl text-primary">{value}</div>
+          </div>
+        ))}
+      </div>
+      <p className="text-sm text-muted-foreground">Bata is counted for trips that have ended. Payment or invoice cancellation does not change the driver’s earned bata.</p>
+      {summaries.map((driver) => {
+        const driverSettled = driver.trips.filter((trip) => trip.driver_bata_settled).reduce((sum, trip) => sum + Number(trip.driver_bata), 0);
+        return (
+          <section key={driver.driverId} className="space-y-3 border-t pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-xl font-semibold">{driver.name}</h2>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                <span>Earned <b>{inr(driver.earned)}</b></span>
+                <span className="text-success">Settled <b>{inr(driverSettled)}</b></span>
+                <span className="text-destructive">Pending <b>{inr(driver.pending)}</b></span>
+              </div>
+            </div>
+            <div className="overflow-x-auto rounded-md border">
+              <Table>
+                <TableHeader><TableRow><TableHead>Trip</TableHead><TableHead>Date</TableHead><TableHead>Customer</TableHead><TableHead>Trip status</TableHead><TableHead className="text-right">Bata</TableHead><TableHead>Settlement</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {driver.trips.map((trip) => (
+                    <TableRow key={trip.id}>
+                      <TableCell><Link className="font-semibold underline" to="/invoice/$tripId" params={{ tripId: trip.id }}>{trip.trip_code}</Link></TableCell>
+                      <TableCell className="whitespace-nowrap text-xs">{fmtDT(trip.end_time ?? trip.created_at)}</TableCell>
+                      <TableCell>{trip.customer_name}</TableCell>
+                      <TableCell><span className={`rounded px-2 py-0.5 text-xs font-semibold uppercase ${statusStyle[trip.status] ?? "bg-muted text-foreground"}`}>{trip.status}</span></TableCell>
+                      <TableCell className="text-right font-semibold">{inr(Number(trip.driver_bata))}</TableCell>
+                      <TableCell className="whitespace-nowrap text-xs">
+                        {trip.driver_bata_settled
+                          ? <span className="text-success"><BadgeCheck className="mr-1 inline h-4 w-4" />Settled {trip.driver_bata_settled_at ? fmtDT(trip.driver_bata_settled_at) : ""}</span>
+                          : <span className="text-destructive"><Clock3 className="mr-1 inline h-4 w-4" />Pending</span>}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" variant={trip.driver_bata_settled ? "outline" : "secondary"} disabled={saving === trip.id} onClick={() => setSettled(trip.id, !trip.driver_bata_settled)}>
+                          {trip.driver_bata_settled ? "Mark pending" : "Mark settled"}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </section>
+        );
+      })}
+      {summaries.length === 0 && <div className="border-t py-10 text-center text-muted-foreground">No completed trips with driver bata yet.</div>}
+    </div>
   );
 }
 

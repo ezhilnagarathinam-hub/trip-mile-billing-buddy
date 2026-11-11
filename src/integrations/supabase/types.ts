@@ -149,6 +149,8 @@ export type Database = {
           customer_phone: string
           distance_km: number
           driver_bata: number
+          driver_bata_settled: boolean
+          driver_bata_settled_at: string | null
           driver_id: string
           driver_name: string
           duration_min: number
@@ -190,6 +192,8 @@ export type Database = {
           customer_phone: string
           distance_km?: number
           driver_bata?: number
+          driver_bata_settled?: boolean
+          driver_bata_settled_at?: string | null
           driver_id: string
           driver_name?: string
           duration_min?: number
@@ -231,6 +235,8 @@ export type Database = {
           customer_phone?: string
           distance_km?: number
           driver_bata?: number
+          driver_bata_settled?: boolean
+          driver_bata_settled_at?: string | null
           driver_id?: string
           driver_name?: string
           duration_min?: number

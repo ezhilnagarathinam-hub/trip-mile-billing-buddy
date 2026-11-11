@@ -7,5 +7,6 @@
 - [x] Allow customer contact edits before invoicing and allow reasoned invoice voids that admins can review.
 - [x] Verify migrations, build, tests, and public sign-in back navigation.
 - [x] Add admin-configured minimum distance and fixed fare, price distance above the threshold, and lock fare settings for drivers.
+- [x] Add an admin driver-bata tab with per-driver earned, settled, and pending totals plus trip-level settlement controls.
 - [ ] Verify the minimum-fare invoice flow in the authenticated preview — requires selecting an existing admin account.
 - [ ] Verify cab editing, customer changes, and invoice cancellation in the authenticated preview — blocked until the user selects one of the existing accounts to test.

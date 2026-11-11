@@ -50,6 +50,13 @@
       "when": 1794077170545,
       "tag": "0006_add_minimum_trip_fare",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794427192203,
+      "tag": "0007_add_driver_bata_settlement",
+      "breakpoints": true
     }
   ]
 }

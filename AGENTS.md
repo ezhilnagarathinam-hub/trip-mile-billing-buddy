@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Keep admin-managed cab catalog entries separate from trips, and snapshot selected cab details, fixed price, admin-controlled trip fare settings, and invoice cancellation reasons on each trip so invoices remain historically accurate; enforce fare snapshots in the database to prevent driver edits.
+- Store driver bata settlement on each trip with admin-only updates so payout totals remain auditable and drivers cannot self-settle.

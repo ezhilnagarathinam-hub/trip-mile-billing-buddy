@@ -21,6 +21,29 @@ export const waPhone = (p: string) => {
 
 export const normalizeCancellationReason = (reason: string) => reason.trim() || null;
 
+export function summarizeDriverBata<T extends {
+  driver_id: string;
+  driver_name: string;
+  driver_bata: number;
+  driver_bata_settled: boolean;
+}>(trips: T[]) {
+  const byDriver = new Map<string, { driverId: string; name: string; trips: T[]; earned: number; settled: number }>();
+  for (const trip of trips) {
+    const summary = byDriver.get(trip.driver_id) ?? {
+      driverId: trip.driver_id,
+      name: trip.driver_name || "Driver",
+      trips: [],
+      earned: 0,
+      settled: 0,
+    };
+    summary.trips.push(trip);
+    summary.earned += Number(trip.driver_bata || 0);
+    if (trip.driver_bata_settled) summary.settled += Number(trip.driver_bata || 0);
+    byDriver.set(trip.driver_id, summary);
+  }
+  return Array.from(byDriver.values(), (driver) => ({ ...driver, pending: driver.earned - driver.settled }));
+}
+
 export function calcDistanceCharge(t: {
   distance_km: number; rate_per_km: number; up_down: boolean;
   minimum_km?: number; minimum_fare?: number;
