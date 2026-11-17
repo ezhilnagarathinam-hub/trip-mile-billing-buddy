@@ -74,6 +74,51 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_bata_bills: {
+        Row: {
+          amount: number
+          bill_code: string
+          created_at: string
+          created_by: string | null
+          driver_id: string
+          driver_name: string
+          driver_phone: string
+          id: string
+          note: string
+          paid_at: string | null
+          status: string
+          trip_ids: string[]
+        }
+        Insert: {
+          amount?: number
+          bill_code?: string
+          created_at?: string
+          created_by?: string | null
+          driver_id: string
+          driver_name?: string
+          driver_phone?: string
+          id?: string
+          note?: string
+          paid_at?: string | null
+          status?: string
+          trip_ids?: string[]
+        }
+        Update: {
+          amount?: number
+          bill_code?: string
+          created_at?: string
+          created_by?: string | null
+          driver_id?: string
+          driver_name?: string
+          driver_phone?: string
+          id?: string
+          note?: string
+          paid_at?: string | null
+          status?: string
+          trip_ids?: string[]
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -106,6 +151,7 @@ export type Database = {
           default_payment_link: string
           driver_bata: number
           id: number
+          include_driver_bata_in_invoice: boolean
           minimum_fare: number
           minimum_km: number
           rate_per_km: number
@@ -116,6 +162,7 @@ export type Database = {
           default_payment_link?: string
           driver_bata?: number
           id?: number
+          include_driver_bata_in_invoice?: boolean
           minimum_fare?: number
           minimum_km?: number
           rate_per_km?: number
@@ -126,6 +173,7 @@ export type Database = {
           default_payment_link?: string
           driver_bata?: number
           id?: number
+          include_driver_bata_in_invoice?: boolean
           minimum_fare?: number
           minimum_km?: number
           rate_per_km?: number
@@ -149,6 +197,7 @@ export type Database = {
           customer_phone: string
           distance_km: number
           driver_bata: number
+          driver_bata_included: boolean
           driver_bata_settled: boolean
           driver_bata_settled_at: string | null
           driver_id: string
@@ -192,6 +241,7 @@ export type Database = {
           customer_phone: string
           distance_km?: number
           driver_bata?: number
+          driver_bata_included?: boolean
           driver_bata_settled?: boolean
           driver_bata_settled_at?: string | null
           driver_id: string
@@ -235,6 +285,7 @@ export type Database = {
           customer_phone?: string
           distance_km?: number
           driver_bata?: number
+          driver_bata_included?: boolean
           driver_bata_settled?: boolean
           driver_bata_settled_at?: string | null
           driver_id?: string
@@ -297,6 +348,10 @@ export type Database = {
         Returns: boolean
       }
       is_approved_driver: { Args: { _user_id: string }; Returns: boolean }
+      mark_driver_bata_bill_paid: {
+        Args: { _bill_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "driver"

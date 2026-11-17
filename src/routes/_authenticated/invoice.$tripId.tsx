@@ -98,7 +98,7 @@ function InvoicePage() {
   const cabCharge = trip.invoiced_at
     ? Number(trip.cab_charge)
     : selectedCab ? Number(selectedCab.cost) : cabType === trip.cab_type ? Number(trip.cab_charge) : 0;
-  const calc = calcTotal({ distance_km: Number(km), rate_per_km: Number(rate), up_down: upDown, minimum_km: Number(minimumKm), minimum_fare: Number(minimumFare), driver_bata: Number(bata), admin_charges: adminCharges, extra_charges: cleanExtras, cab_charge: cabCharge });
+  const calc = calcTotal({ distance_km: Number(km), rate_per_km: Number(rate), up_down: upDown, minimum_km: Number(minimumKm), minimum_fare: Number(minimumFare), driver_bata: Number(bata), driver_bata_included: trip.driver_bata_included, admin_charges: adminCharges, extra_charges: cleanExtras, cab_charge: cabCharge });
   const selectedCabDetails = selectedCab
     ? `${selectedCab.name}${selectedCab.model ? ` · ${selectedCab.model}` : ""} · ${selectedCab.seats} seater · ${selectedCab.ac ? "AC" : "Non-AC"}${selectedCab.features.trim() ? ` · ${selectedCab.features.trim()}` : ""}`
     : cabType === trip.cab_type ? trip.cab_details ?? "" : "";
@@ -122,7 +122,7 @@ function InvoicePage() {
     if (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim())) { toast.error("Enter a valid email address"); return; }
     save({
       customer_name: customerName.trim(), customer_phone: customerPhone.trim(), customer_email: customerEmail.trim(),
-      distance_km: Number(km), rate_per_km: Number(rate), driver_bata: Number(bata), up_down: upDown,
+      distance_km: Number(km), rate_per_km: Number(rate), driver_bata: Number(bata), driver_bata_included: trip.driver_bata_included, up_down: upDown,
       km_charge: calc.kmCharge, admin_charges: adminCharges, extra_charges: cleanExtras,
       cab_charge: cabCharge, total_amount: calc.total, payment_link: link, cab_type: cabType || null, cab_details: selectedCabDetails || null,
       status: "invoiced", invoiced_at: new Date().toISOString(),
@@ -150,7 +150,7 @@ function InvoicePage() {
     ``,
     `KM charge: ${inr(Number(trip.km_charge))}`,
     Number(trip.cab_charge) ? `Cab price: ${inr(Number(trip.cab_charge))}` : "",
-    Number(trip.driver_bata) ? `Driver bata: ${inr(Number(trip.driver_bata))}` : "",
+    trip.driver_bata_included && Number(trip.driver_bata) ? `Driver bata (included in total): ${inr(Number(trip.driver_bata))}` : "",
     ...((trip.admin_charges as Charge[]) ?? []).map((c) => `${c.name}: ${inr(c.amount)}`),
     ...((trip.extra_charges as Charge[]) ?? []).map((c) => `${c.name}: ${inr(c.amount)}`),
     `*Total: ${inr(Number(trip.total_amount))}*`,
@@ -212,8 +212,9 @@ function InvoicePage() {
                 <div className="grid grid-cols-3 gap-2">
                   <div><Label>Distance (km)</Label><Input type="number" step="0.1" value={km} onChange={(e) => setKm(e.target.value)} /></div>
                   <div><Label>₹ per km (set by admin)</Label><Input type="number" value={rate} disabled /></div>
-                  <div><Label>Driver bata ₹</Label><Input type="number" value={bata} onChange={(e) => setBata(e.target.value)} /></div>
+                  <div><Label>Driver bata ₹</Label><Input type="number" value={bata} disabled /></div>
                 </div>
+                <p className="text-sm text-muted-foreground">{trip.driver_bata_included ? "Driver bata is included in the customer invoice total." : "Driver bata is tracked for payout, but is not included in the customer invoice total."}</p>
                 {Number(minimumKm) > 0 && <div className="rounded-md border bg-muted/40 p-3 text-sm">
                   <div className="font-semibold">Admin fare: first {minimumKm} km at {inr(Number(minimumFare))}</div>
                   <div className="text-muted-foreground">{calc.distanceCharge.extraKm > 0 ? `${calc.distanceCharge.extraKm} additional km × ${inr(Number(rate))}/km = ${inr(calc.distanceCharge.extraKmCharge)}` : "Additional distance is charged at the admin-set per-kilometre rate."}</div>
@@ -324,7 +325,7 @@ function InvoiceCard({ trip, refEl }: { trip: TripRow; refEl: React.RefObject<HT
   const rows: [string, string][] = [
     [distanceLabel, inr(Number(trip.km_charge))],
     ...(Number(trip.cab_charge) ? [[`Cab price${trip.cab_details ? ` · ${trip.cab_details.split(" · ")[0]}` : ""}`, inr(Number(trip.cab_charge))] as [string, string]] : []),
-    ...(Number(trip.driver_bata) ? [["Driver bata", inr(Number(trip.driver_bata))] as [string, string]] : []),
+    ...(trip.driver_bata_included && Number(trip.driver_bata) ? [["Driver bata (included)", inr(Number(trip.driver_bata))] as [string, string]] : []),
     ...((trip.admin_charges as Charge[]) ?? []).map((c) => [c.name, inr(c.amount)] as [string, string]),
     ...((trip.extra_charges as Charge[]) ?? []).map((c) => [c.name, inr(c.amount)] as [string, string]),
   ];

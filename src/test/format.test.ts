@@ -18,6 +18,21 @@ describe("invoice total", () => {
     expect(result.total).toBe(2790);
   });
 
+  it("keeps driver bata out of the customer total when the admin disables invoice inclusion", () => {
+    const result = calcTotal({
+      distance_km: 10,
+      rate_per_km: 20,
+      up_down: false,
+      driver_bata: 300,
+      driver_bata_included: false,
+      admin_charges: [],
+      extra_charges: [],
+    });
+
+    expect(result.bataCharge).toBe(0);
+    expect(result.total).toBe(200);
+  });
+
   it("charges the fixed fare for the first 20 km and the per-km rate only beyond it", () => {
     const result = calcDistanceCharge({ distance_km: 25, rate_per_km: 20, up_down: false, minimum_km: 20, minimum_fare: 500 });
 

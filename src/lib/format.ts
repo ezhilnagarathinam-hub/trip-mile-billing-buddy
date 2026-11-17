@@ -59,14 +59,15 @@ export function calcDistanceCharge(t: {
 export function calcTotal(t: {
   distance_km: number; rate_per_km: number; up_down: boolean; driver_bata: number;
   admin_charges: Charge[]; extra_charges: Charge[]; cab_charge?: number;
-  minimum_km?: number; minimum_fare?: number;
+  minimum_km?: number; minimum_fare?: number; driver_bata_included?: boolean;
 }) {
   const distanceCharge = calcDistanceCharge(t);
   const { billedKm } = distanceCharge;
   const kmCharge = distanceCharge.total;
   const sum = (a: Charge[]) => a.reduce((s, c) => s + Number(c.amount || 0), 0);
   const cabCharge = Number(t.cab_charge || 0);
-  return { billedKm, kmCharge, distanceCharge, cabCharge, total: kmCharge + Number(t.driver_bata || 0) + sum(t.admin_charges) + sum(t.extra_charges) + cabCharge };
+  const bataCharge = t.driver_bata_included === false ? 0 : Number(t.driver_bata || 0);
+  return { billedKm, kmCharge, distanceCharge, cabCharge, bataCharge, total: kmCharge + bataCharge + sum(t.admin_charges) + sum(t.extra_charges) + cabCharge };
 }
 
 export const statusStyle: Record<string, string> = {
