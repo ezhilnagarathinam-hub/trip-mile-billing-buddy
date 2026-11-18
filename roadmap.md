@@ -8,5 +8,8 @@
 - [x] Verify migrations, build, tests, and public sign-in back navigation.
 - [x] Add admin-configured minimum distance and fixed fare, price distance above the threshold, and lock fare settings for drivers.
 - [x] Add an admin driver-bata tab with per-driver earned, settled, and pending totals plus trip-level settlement controls.
+- [x] Let admins include or exclude bata from new customer invoices and create/share separate driver-bata bills from selected trips or direct amounts.
+- [x] Keep bata inclusion and amount admin-controlled, and settle trip-linked bills atomically through an admin-only action.
+- [ ] Verify the driver-bata controls and WhatsApp bill flow in the authenticated preview — requires selecting an existing admin account.
 - [ ] Verify the minimum-fare invoice flow in the authenticated preview — requires selecting an existing admin account.
 - [ ] Verify cab editing, customer changes, and invoice cancellation in the authenticated preview — blocked until the user selects one of the existing accounts to test.

@@ -71,6 +71,20 @@
       "when": 1794941012066,
       "tag": "0009_protect_trip_bata_bills_and_settlement",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794990216631,
+      "tag": "0010_lock_billed_trip_settlement",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794990243982,
+      "tag": "0011_secure_trip_bill_settlement_path",
+      "breakpoints": true
     }
   ]
 }

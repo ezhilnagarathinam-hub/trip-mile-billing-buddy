@@ -2,7 +2,7 @@ import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Check, X, Trash2, Plus, Car, Pencil, Save, BadgeCheck, Clock3 } from "lucide-react";
+import { Check, X, Trash2, Plus, Car, Pencil, Save, BadgeCheck, Clock3, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-auth";
 import { AppHeader } from "@/components/AppHeader";
@@ -10,10 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { fmtDT, fmtDur, inr, statusStyle, summarizeDriverBata } from "@/lib/format";
+import { BRAND, fmtDT, fmtDur, inr, statusStyle, summarizeDriverBata, waPhone } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [
@@ -138,6 +139,12 @@ function Drivers() {
 
 function DriverBata() {
   const qc = useQueryClient();
+  const { data: me } = useMe();
+  const settings = useQuery({ queryKey: ["settings"], queryFn: async () => {
+    const { data, error } = await supabase.from("settings").select("include_driver_bata_in_invoice").eq("id", 1).single();
+    if (error) throw error;
+    return data;
+  } });
   const trips = useQuery({
     queryKey: ["bata-settlements"],
     queryFn: async () => {
@@ -146,12 +153,65 @@ function DriverBata() {
       return data;
     },
   });
+  const bills = useQuery({
+    queryKey: ["driver-bata-bills"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("driver_bata_bills").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+  const profiles = useQuery({
+    queryKey: ["driver-bata-profiles"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id, phone, full_name");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const driverRoles = useQuery({
+    queryKey: ["driver-bata-roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("user_roles").select("user_id").eq("role", "driver");
+      if (error) throw error;
+      return data;
+    },
+  });
   const [saving, setSaving] = useState<string | null>(null);
+  const [selectedTrips, setSelectedTrips] = useState<Record<string, boolean>>({});
+  const [directDrafts, setDirectDrafts] = useState<Record<string, { amount: string; note: string }>>({});
   const rows = trips.data ?? [];
+  const allBills = bills.data ?? [];
+  const alreadyBilledTripIds = new Set(allBills.flatMap((bill) => bill.trip_ids));
   const summaries = summarizeDriverBata(rows);
+  const driverSummaries = (profiles.data ?? [])
+    .filter((profile) => driverRoles.data?.some((role) => role.user_id === profile.id))
+    .map((profile) => summaries.find((summary) => summary.driverId === profile.id) ?? {
+      driverId: profile.id,
+      name: profile.full_name || "Driver",
+      trips: [],
+      earned: 0,
+      settled: 0,
+      pending: 0,
+    });
   const earned = summaries.reduce((sum, driver) => sum + driver.earned, 0);
   const settled = summaries.reduce((sum, driver) => sum + driver.settled, 0);
   const pending = earned - settled;
+  async function setBataIncluded(include: boolean) {
+    const { error } = await supabase.from("settings").update({ include_driver_bata_in_invoice: include, updated_at: new Date().toISOString() }).eq("id", 1);
+    if (error) { toast.error(error.message); return; }
+    toast.success(include ? "Bata will be included in new trip invoices" : "Bata will be excluded from new trip invoices");
+    qc.invalidateQueries({ queryKey: ["settings"] });
+  }
+  const directBills = allBills.filter((bill) => bill.trip_ids.length === 0);
+  const directEarned = directBills.reduce((sum, bill) => sum + Number(bill.amount), 0);
+  const directSettled = directBills.filter((bill) => bill.status === "paid").reduce((sum, bill) => sum + Number(bill.amount), 0);
+
+  function refreshBata() {
+    qc.invalidateQueries({ queryKey: ["bata-settlements"] });
+    qc.invalidateQueries({ queryKey: ["driver-bata-bills"] });
+    qc.invalidateQueries({ queryKey: ["all-trips"] });
+  }
 
   async function setSettled(tripId: string, isSettled: boolean) {
     setSaving(tripId);
@@ -159,8 +219,61 @@ function DriverBata() {
     setSaving(null);
     if (error) { toast.error(error.message); return; }
     toast.success(isSettled ? "Driver bata marked settled" : "Driver bata marked pending");
-    qc.invalidateQueries({ queryKey: ["bata-settlements"] });
-    qc.invalidateQueries({ queryKey: ["all-trips"] });
+    refreshBata();
+  }
+
+  async function createTripBill(driverId: string, driverName: string, driverPhone: string, driverTrips: typeof rows) {
+    const selected = driverTrips.filter((trip) => selectedTrips[trip.id] && !trip.driver_bata_settled && !alreadyBilledTripIds.has(trip.id));
+    if (selected.length === 0) { toast.error("Select at least one unbilled trip"); return; }
+    const amount = selected.reduce((sum, trip) => sum + Number(trip.driver_bata), 0);
+    if (!me?.user.id) { toast.error("Unable to identify the admin account"); return; }
+    const { error } = await supabase.from("driver_bata_bills").insert({
+      driver_id: driverId, driver_name: driverName, driver_phone: driverPhone,
+      amount, trip_ids: selected.map((trip) => trip.id), note: `${selected.length} trip bata payment`, created_by: me.user.id,
+    });
+    if (error) { toast.error(error.message); return; }
+    setSelectedTrips((current) => Object.fromEntries(Object.entries(current).filter(([id]) => !selected.some((trip) => trip.id === id))));
+    toast.success("Driver bata bill created");
+    refreshBata();
+  }
+
+  async function createDirectBill(driverId: string, driverName: string, driverPhone: string) {
+    const draft = directDrafts[driverId] ?? { amount: "", note: "" };
+    const amount = Number(draft.amount);
+    if (!(amount > 0)) { toast.error("Enter a bill amount greater than zero"); return; }
+    if (!me?.user.id) { toast.error("Unable to identify the admin account"); return; }
+    const { error } = await supabase.from("driver_bata_bills").insert({
+      driver_id: driverId, driver_name: driverName, driver_phone: driverPhone,
+      amount, note: draft.note.trim() || "Direct driver bata payment", trip_ids: [], created_by: me.user.id,
+    });
+    if (error) { toast.error(error.message); return; }
+    setDirectDrafts((current) => ({ ...current, [driverId]: { amount: "", note: "" } }));
+    toast.success("Direct driver bata bill created");
+    refreshBata();
+  }
+
+  async function markBillPaid(billId: string) {
+    const { error } = await supabase.rpc("mark_driver_bata_bill_paid", { _bill_id: billId });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Driver bata bill marked paid");
+    refreshBata();
+  }
+
+  function billMessage(bill: (typeof allBills)[number], paid = false) {
+    return [
+      `*${BRAND.name} — Driver Bata ${paid ? "Payment Received" : "Bill"}*`,
+      `Bill: ${bill.bill_code}`,
+      `Driver: ${bill.driver_name}`,
+      bill.note ? `Details: ${bill.note}` : "",
+      `Amount: ${inr(Number(bill.amount))}`,
+      paid ? `Status: PAID${bill.paid_at ? ` on ${fmtDT(bill.paid_at)}` : ""}` : "Please confirm once received.",
+      `Contact: ${BRAND.contact} | Support: ${BRAND.support}`,
+    ].filter(Boolean).join("\n");
+  }
+
+  function shareBill(bill: (typeof allBills)[number], paid = false) {
+    if (!bill.driver_phone) { toast.error("Add a phone number to this driver's profile before sharing"); return; }
+    window.open(`https://wa.me/${waPhone(bill.driver_phone)}?text=${encodeURIComponent(billMessage(bill, paid))}`, "_blank");
   }
 
   return (
@@ -173,9 +286,21 @@ function DriverBata() {
           </div>
         ))}
       </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[["Direct bills", inr(directEarned)], ["Direct bills paid", inr(directSettled)], ["Direct bills pending", inr(directEarned - directSettled)]].map(([label, value]) => (
+          <div key={label} className="rounded-md border p-3"><div className="text-xs uppercase text-muted-foreground">{label}</div><div className="text-xl font-semibold">{value}</div></div>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-y py-3">
+        <div><div className="font-semibold">Customer invoice bata</div><p className="text-sm text-muted-foreground">{settings.data?.include_driver_bata_in_invoice ? "Included in invoices for new trips." : "Tracked for driver payout, not added to customer invoices."} Existing trips keep their saved choice.</p></div>
+        <label className="flex items-center gap-2 text-sm"><Switch checked={settings.data?.include_driver_bata_in_invoice ?? true} onCheckedChange={setBataIncluded} />{settings.data?.include_driver_bata_in_invoice ? "Enabled" : "Disabled"}</label>
+      </div>
       <p className="text-sm text-muted-foreground">Bata is counted for trips that have ended. Payment or invoice cancellation does not change the driver’s earned bata.</p>
-      {summaries.map((driver) => {
+      {driverSummaries.map((driver) => {
         const driverSettled = driver.trips.filter((trip) => trip.driver_bata_settled).reduce((sum, trip) => sum + Number(trip.driver_bata), 0);
+        const profile = profiles.data?.find((item) => item.id === driver.driverId);
+        const driverPhone = profile?.phone ?? "";
+        const draft = directDrafts[driver.driverId] ?? { amount: "", note: "" };
         return (
           <section key={driver.driverId} className="space-y-3 border-t pt-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -188,11 +313,11 @@ function DriverBata() {
             </div>
             <div className="overflow-x-auto rounded-md border">
               <Table>
-                <TableHeader><TableRow><TableHead>Trip</TableHead><TableHead>Date</TableHead><TableHead>Customer</TableHead><TableHead>Trip status</TableHead><TableHead className="text-right">Bata</TableHead><TableHead>Settlement</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Bill</TableHead><TableHead>Date</TableHead><TableHead>Customer</TableHead><TableHead>Trip status</TableHead><TableHead className="text-right">Bata</TableHead><TableHead>Settlement</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {driver.trips.map((trip) => (
                     <TableRow key={trip.id}>
-                      <TableCell><Link className="font-semibold underline" to="/invoice/$tripId" params={{ tripId: trip.id }}>{trip.trip_code}</Link></TableCell>
+                      <TableCell className="space-y-1"><Link className="font-semibold underline" to="/invoice/$tripId" params={{ tripId: trip.id }}>{trip.trip_code}</Link><div><Checkbox aria-label={`Select bata for ${trip.trip_code}`} checked={!!selectedTrips[trip.id]} disabled={trip.driver_bata_settled || alreadyBilledTripIds.has(trip.id)} onCheckedChange={(checked) => setSelectedTrips((current) => ({ ...current, [trip.id]: checked === true }))} /></div></TableCell>
                       <TableCell className="whitespace-nowrap text-xs">{fmtDT(trip.end_time ?? trip.created_at)}</TableCell>
                       <TableCell>{trip.customer_name}</TableCell>
                       <TableCell><span className={`rounded px-2 py-0.5 text-xs font-semibold uppercase ${statusStyle[trip.status] ?? "bg-muted text-foreground"}`}>{trip.status}</span></TableCell>
@@ -212,10 +337,42 @@ function DriverBata() {
                 </TableBody>
               </Table>
             </div>
+            <div className="flex flex-wrap items-end gap-2">
+              <Button size="sm" onClick={() => createTripBill(driver.driverId, driver.name, driverPhone, driver.trips)}>Create bill from selected trips</Button>
+              <div className="w-28"><Label htmlFor={`direct-bata-amount-${driver.driverId}`}>Direct amount ₹</Label><Input id={`direct-bata-amount-${driver.driverId}`} type="number" min="0.01" step="0.01" value={draft.amount} onChange={(event) => setDirectDrafts((current) => ({ ...current, [driver.driverId]: { ...draft, amount: event.target.value } }))} /></div>
+              <div className="min-w-48 flex-1"><Label htmlFor={`direct-bata-note-${driver.driverId}`}>Direct bill note</Label><Input id={`direct-bata-note-${driver.driverId}`} placeholder="Optional details" value={draft.note} onChange={(event) => setDirectDrafts((current) => ({ ...current, [driver.driverId]: { ...draft, note: event.target.value } }))} /></div>
+              <Button size="sm" variant="outline" onClick={() => createDirectBill(driver.driverId, driver.name, driverPhone)}>Create direct bill</Button>
+            </div>
           </section>
         );
       })}
-      {summaries.length === 0 && <div className="border-t py-10 text-center text-muted-foreground">No completed trips with driver bata yet.</div>}
+      <section className="space-y-3 border-t pt-4">
+        <h2 className="text-xl font-semibold">Driver bata bills</h2>
+        <div className="overflow-x-auto rounded-md border">
+          <Table>
+            <TableHeader><TableRow><TableHead>Bill</TableHead><TableHead>Driver</TableHead><TableHead>Date</TableHead><TableHead>Details</TableHead><TableHead>Trips</TableHead><TableHead>Amount</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {allBills.map((bill) => (
+                <TableRow key={bill.id}>
+                  <TableCell className="font-semibold">{bill.bill_code}</TableCell>
+                  <TableCell>{bill.driver_name}</TableCell>
+                  <TableCell className="whitespace-nowrap text-xs">{fmtDT(bill.created_at)}</TableCell>
+                  <TableCell>{bill.note || "Direct bata bill"}</TableCell>
+                  <TableCell>{bill.trip_ids.length || "Direct"}</TableCell>
+                  <TableCell className="font-semibold">{inr(Number(bill.amount))}</TableCell>
+                  <TableCell><span className={`rounded px-2 py-0.5 text-xs font-semibold uppercase ${bill.status === "paid" ? "bg-success text-success-foreground" : "bg-accent"}`}>{bill.status}</span></TableCell>
+                  <TableCell><div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" onClick={() => shareBill(bill)}><MessageCircle className="mr-1 h-4 w-4" />Share bill</Button>
+                    {bill.status === "pending" ? <Button size="sm" onClick={() => markBillPaid(bill.id)}>Mark paid</Button> : <Button size="sm" variant="secondary" onClick={() => shareBill(bill, true)}><MessageCircle className="mr-1 h-4 w-4" />Paid message</Button>}
+                  </div></TableCell>
+                </TableRow>
+              ))}
+              {allBills.length === 0 && <TableRow><TableCell colSpan={8} className="py-6 text-center text-muted-foreground">No driver bata bills yet.</TableCell></TableRow>}
+            </TableBody>
+          </Table>
+        </div>
+      </section>
+      {driverSummaries.length === 0 && <div className="border-t py-10 text-center text-muted-foreground">No drivers found yet.</div>}
     </div>
   );
 }
