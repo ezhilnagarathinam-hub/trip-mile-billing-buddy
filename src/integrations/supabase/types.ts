@@ -155,6 +155,7 @@ export type Database = {
           minimum_fare: number
           minimum_km: number
           rate_per_km: number
+          trip_type_configs: Json
           up_down: boolean
           updated_at: string
         }
@@ -166,6 +167,7 @@ export type Database = {
           minimum_fare?: number
           minimum_km?: number
           rate_per_km?: number
+          trip_type_configs?: Json
           up_down?: boolean
           updated_at?: string
         }
@@ -177,6 +179,7 @@ export type Database = {
           minimum_fare?: number
           minimum_km?: number
           rate_per_km?: number
+          trip_type_configs?: Json
           up_down?: boolean
           updated_at?: string
         }
@@ -197,9 +200,12 @@ export type Database = {
           customer_phone: string
           distance_km: number
           driver_bata: number
+          driver_bata_enabled: boolean
           driver_bata_included: boolean
+          driver_bata_mode: string
           driver_bata_settled: boolean
           driver_bata_settled_at: string | null
+          driver_bata_value: number
           driver_id: string
           driver_name: string
           duration_min: number
@@ -224,6 +230,7 @@ export type Database = {
           status: string
           total_amount: number
           trip_code: string
+          trip_type: string
           up_down: boolean
           vehicle_no: string
         }
@@ -241,9 +248,12 @@ export type Database = {
           customer_phone: string
           distance_km?: number
           driver_bata?: number
+          driver_bata_enabled?: boolean
           driver_bata_included?: boolean
+          driver_bata_mode?: string
           driver_bata_settled?: boolean
           driver_bata_settled_at?: string | null
+          driver_bata_value?: number
           driver_id: string
           driver_name?: string
           duration_min?: number
@@ -268,6 +278,7 @@ export type Database = {
           status?: string
           total_amount?: number
           trip_code?: string
+          trip_type?: string
           up_down?: boolean
           vehicle_no?: string
         }
@@ -285,9 +296,12 @@ export type Database = {
           customer_phone?: string
           distance_km?: number
           driver_bata?: number
+          driver_bata_enabled?: boolean
           driver_bata_included?: boolean
+          driver_bata_mode?: string
           driver_bata_settled?: boolean
           driver_bata_settled_at?: string | null
+          driver_bata_value?: number
           driver_id?: string
           driver_name?: string
           duration_min?: number
@@ -312,6 +326,7 @@ export type Database = {
           status?: string
           total_amount?: number
           trip_code?: string
+          trip_type?: string
           up_down?: boolean
           vehicle_no?: string
         }

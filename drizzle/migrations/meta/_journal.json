@@ -85,6 +85,13 @@
       "when": 1794990243982,
       "tag": "0011_secure_trip_bill_settlement_path",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795078036232,
+      "tag": "0012_add_trip_type_pricing_and_bata_rules",
+      "breakpoints": true
     }
   ]
 }
